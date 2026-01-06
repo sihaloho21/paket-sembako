@@ -369,7 +369,26 @@ function updateOrderTotal() {
         return sum + (price * item.qty);
     }, 0);
     
-    document.getElementById('order-final-total').innerText = `Rp ${total.toLocaleString('id-ID')}`;
+    const formattedTotal = `Rp ${total.toLocaleString('id-ID')}`;
+    document.getElementById('order-final-total').innerText = formattedTotal;
+    
+    const stickyTotal = document.getElementById('sticky-order-total');
+    if (stickyTotal) {
+        stickyTotal.innerText = formattedTotal;
+    }
+}
+
+function showQRISModal() {
+    document.getElementById('qris-modal').classList.remove('hidden');
+    document.body.classList.add('modal-active');
+}
+
+function closeQRISModal() {
+    document.getElementById('qris-modal').classList.add('hidden');
+    // Don't remove modal-active if order-modal is still open
+    if (document.getElementById('order-modal').classList.contains('hidden')) {
+        document.body.classList.remove('modal-active');
+    }
 }
 
 function closeOrderModal() {
@@ -397,6 +416,7 @@ function sendToWA() {
     }
 
     const isGajian = pay === 'Bayar Gajian';
+    const isQRIS = pay === 'QRIS';
     const now = new Date();
     const wibOffset = 7 * 60 * 60 * 1000;
     const nowWIB = new Date(now.getTime() + wibOffset);
@@ -421,7 +441,7 @@ function sendToWA() {
 ------------------------------------------
 *Tanggal Pemesanan:* ${dateStr}
 *Atas Nama:* ${name || '-'}
-*Metode Bayar:* ${pay}
+*Metode Bayar:* ${pay}${isQRIS ? ' (Sudah Bayar via QRIS)' : ''}
 *Pengiriman:* ${ship}
 ${locationInfo}
 *Daftar Belanja:*

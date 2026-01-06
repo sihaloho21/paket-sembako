@@ -207,7 +207,7 @@
                         
                         <!-- UI for Delivery -->
                         <div id="delivery-location-ui" class="hidden">
-                            <button id="get-location-btn" onclick="getCurrentLocation()" class="w-full p-4 bg-blue-50 border-2 border-blue-200 text-blue-700 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition">
+                            <button id="get-location-btn" onclick="getCurrentLocation()" class="w-full p-4 bg-blue-50 border-2 border-blue-200 text-blue-700 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition animate-pulse-glow">
                                 <span>📍 Bagikan Lokasi Saya</span>
                             </button>
                             <p class="text-[10px] text-gray-500 mt-2 italic text-center">Klik tombol di atas agar kurir mudah menemukan rumah Anda</p>
@@ -217,7 +217,9 @@
                         <div id="pickup-location-ui" class="hidden bg-orange-50 p-4 rounded-xl border border-orange-100">
                             <p class="text-xs text-orange-800 font-medium mb-2">📍 Lokasi Toko:</p>
                             <p class="text-[10px] text-orange-700">Kp. Baru, Kec. Kibin, Serang (Dekat Gerbang Nikomas)</p>
-                            <a href="https://maps.app.goo.gl/JExkrRvR5PBah9oaA" target="_blank" class="text-[10px] text-blue-600 font-bold underline mt-1 block">Buka di Google Maps</a>
+                            <a href="https://maps.app.goo.gl/JExkrRvR5PBah9oaA" target="_blank" class="w-full p-3 bg-orange-100 border-2 border-orange-200 text-orange-700 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-orange-200 transition animate-pulse-glow text-xs mt-2">
+                                <span>📍 Lihat Lokasi Toko</span>
+                            </a>
                         </div>
 
                         <input type="hidden" id="location-link">
@@ -229,7 +231,13 @@
                             <label class="radio-card relative cursor-pointer">
                                 <input type="radio" name="pay-method" value="Cash / Transfer" onchange="updateOrderTotal()" class="absolute opacity-0">
                                 <div class="radio-label p-4 border-2 border-gray-100 rounded-xl text-center transition">
-                                    <p class="font-bold text-gray-800 text-sm">Cash</p>
+                                    <p class="font-bold text-gray-800 text-sm">TUNAI</p>
+                                </div>
+                            </label>
+                            <label class="radio-card relative cursor-pointer">
+                                <input type="radio" name="pay-method" value="QRIS" onchange="showQRISModal(); updateOrderTotal();" class="absolute opacity-0">
+                                <div class="radio-label p-4 border-2 border-gray-100 rounded-xl text-center transition">
+                                    <p class="font-bold text-gray-800 text-sm">QRIS</p>
                                 </div>
                             </label>
                             <label class="radio-card relative cursor-pointer">
@@ -240,6 +248,14 @@
                             </label>
                         </div>
                     </div>
+
+                    <!-- New Total Bayar Display -->
+                    <div id="sticky-total-container" class="mt-4">
+                        <div class="w-full bg-gray-100 p-4 rounded-xl flex justify-between items-center border border-gray-200">
+                            <span class="text-gray-700 font-bold">Total Bayar:</span>
+                            <span id="sticky-order-total" class="text-xl font-bold text-green-700">Rp 0</span>
+                        </div>
+                    </div>
                 </div>
 
                 <button onclick="sendToWA()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl transition shadow-lg flex items-center justify-center gap-2">
@@ -247,6 +263,26 @@
                     Kirim Pesanan ke WhatsApp
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- QRIS Modal -->
+    <div id="qris-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-[60]">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-xs mx-4 text-center">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Pembayaran QRIS</h3>
+                <button onclick="closeQRISModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="bg-white p-2 border-2 border-gray-100 rounded-xl mb-4">
+                <img src="https://i.ibb.co.com/XrDC6Kkc/qr-dana-personal.png" alt="QRIS Dana" class="mx-auto">
+            </div>
+            <p class="text-xs text-gray-600 mb-4">Silakan screenshot atau scan langsung QRIS di atas untuk melakukan pembayaran.</p>
+            <a href="https://i.ibb.co.com/XrDC6Kkc/qr-dana-personal.png" download="QRIS_Harapan_Jaya.png" target="_blank" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-4 rounded-lg transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Download QRIS
+            </a>
         </div>
     </div>
 
