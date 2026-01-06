@@ -42,13 +42,16 @@ async function fetchProducts() {
             if (cashPrice >= 150000) category = 'Paket Lengkap';
             else if (cashPrice >= 50000) category = 'Paket Hemat';
             
+            // Dummy descriptions if empty
+            const dummyDesc = "Beras Premium 5kg, Minyak Goreng 1L, Gula Pasir 1kg, Mie Instan 5 pcs, Teh Celup 1 box";
+            
             return {
                 ...p,
                 harga: cashPrice,
                 hargaGajian: gajianInfo.price,
                 stok: parseInt(p.stok) || 0,
                 category: category,
-                deskripsi: p.deskripsi || "Kualitas Terjamin,Stok Selalu Baru,Harga Kompetitif"
+                deskripsi: (p.deskripsi && p.deskripsi !== "Kualitas Terjamin,Stok Selalu Baru,Harga Kompetitif") ? p.deskripsi : dummyDesc
             };
         });
         renderProducts(allProducts);
@@ -317,11 +320,17 @@ function showDetail(p) {
     `).join('');
     
     dotsContainer.innerHTML = images.map((_, i) => `
-        <div class="slider-dot w-2 h-2 rounded-full bg-white/50 transition-all duration-300 ${i === 0 ? 'bg-white w-4' : ''}" data-index="${i}"></div>
+        <div class="slider-dot w-2 h-2 rounded-full bg-white/50 transition-all duration-300 ${i === 0 ? 'bg-white w-4' : ''}" onclick="goToSlide(${i})" data-index="${i}"></div>
     `).join('');
 
     // Slider Logic
     currentSlide = 0;
+    window.goToSlide = (index) => {
+        currentSlide = index;
+        updateSlider();
+        startSlider(); // Reset interval
+    };
+
     const updateSlider = () => {
         slider.style.transform = `translateX(-${currentSlide * 100}%)`;
         document.querySelectorAll('.slider-dot').forEach((dot, i) => {
@@ -349,8 +358,25 @@ function showDetail(p) {
     const sliderContainer = slider.parentElement;
     sliderContainer.onmouseenter = () => clearInterval(sliderInterval);
     sliderContainer.onmouseleave = startSlider;
-    sliderContainer.ontouchstart = () => clearInterval(sliderInterval);
-    sliderContainer.ontouchend = startSlider;
+    
+    // Manual Swipe Support (Simple)
+    let touchStartX = 0;
+    sliderContainer.ontouchstart = (e) => {
+        clearInterval(sliderInterval);
+        touchStartX = e.touches[0].clientX;
+    };
+    sliderContainer.ontouchend = (e) => {
+        const touchEndX = e.changedTouches[0].clientX;
+        if (touchStartX - touchEndX > 50) {
+            // Swipe Left
+            currentSlide = (currentSlide + 1) % images.length;
+        } else if (touchEndX - touchStartX > 50) {
+            // Swipe Right
+            currentSlide = (currentSlide - 1 + images.length) % images.length;
+        }
+        updateSlider();
+        startSlider();
+    };
 
     // Set Button Actions
     const addBtn = document.getElementById('modal-add-cart');
