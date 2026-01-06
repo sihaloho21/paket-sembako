@@ -71,36 +71,81 @@
 
     <!-- Modal Rincian -->
     <div id="detail-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-start mb-4">
-                <h3 id="modal-product-name" class="text-2xl font-bold text-gray-800">Rincian Produk</h3>
-                <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 max-h-[95vh] overflow-y-auto relative">
+            <!-- Close Button (X) -->
+            <button onclick="closeDetailModal()" class="absolute top-4 right-4 z-10 bg-white/80 backdrop-blur-sm p-2 rounded-full text-gray-600 hover:text-gray-900 shadow-sm transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <div id="modal-product-content">
+                <!-- Image Slider Container -->
+                <div class="relative group h-64 w-full overflow-hidden rounded-t-2xl bg-gray-100">
+                    <div id="modal-slider" class="flex transition-transform duration-500 ease-out h-full">
+                        <!-- Images will be injected here -->
+                    </div>
+                    <!-- Slider Dots -->
+                    <div id="slider-dots" class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                        <!-- Dots will be injected here -->
+                    </div>
+                </div>
+
+                <div class="p-6 space-y-5">
+                    <!-- Header: Title & Badges -->
+                    <div class="space-y-2">
+                        <div class="flex flex-wrap gap-2" id="modal-badges">
+                            <!-- Badges injected here -->
+                        </div>
+                        <h3 id="modal-product-name" class="text-2xl font-bold text-gray-800 leading-tight">Rincian Produk</h3>
+                    </div>
+
+                    <!-- Savings Highlight -->
+                    <div id="savings-highlight" class="hidden">
+                        <div class="bg-orange-50 border border-orange-100 text-orange-700 px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1a1 1 0 112 0v1a1 1 0 11-2 0zM13.536 14.243a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414-1.414l.707-.707zM16.243 5.05a1 1 0 10-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707z"></path></svg>
+                            <span>Hemat <span id="savings-amount" class="font-bold"></span> dibanding harga pasar</span>
+                        </div>
+                    </div>
+
+                    <!-- Itemized List -->
+                    <div class="space-y-3">
+                        <h4 class="font-bold text-gray-700 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                            Isi Paket:
+                        </h4>
+                        <div id="modal-items-list" class="grid grid-cols-1 gap-2">
+                            <!-- Items with icons injected here -->
+                        </div>
+                    </div>
+
+                    <!-- Price Layout -->
+                    <div class="bg-gray-50 p-4 rounded-2xl grid grid-cols-2 gap-4 border border-gray-100">
+                        <div class="space-y-1">
+                            <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Harga Tunai</p>
+                            <p id="modal-cash-price" class="text-xl font-black text-green-700"></p>
+                        </div>
+                        <div class="space-y-1 border-l border-gray-200 pl-4">
+                            <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Bayar Gajian</p>
+                            <p id="modal-gajian-price" class="text-xl font-black text-blue-700"></p>
+                        </div>
+                    </div>
+
+                    <!-- Shipping Info -->
+                    <div class="flex items-center gap-2 text-xs text-gray-500 bg-blue-50/50 p-3 rounded-xl">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <p>Tersedia untuk antar Nikomas & Ambil di Tempat</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="p-6 pt-0 flex gap-3">
+                <button id="modal-add-cart" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl transition shadow-lg shadow-green-200 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    + Keranjang
                 </button>
-            </div>
-            <div id="modal-product-content" class="space-y-4">
-                <img id="modal-img" src="" alt="" class="w-full h-48 object-cover rounded-lg mb-4">
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h4 class="font-bold text-gray-700 mb-2">Deskripsi Produk:</h4>
-                    <ol id="modal-desc-list" class="list-decimal list-inside text-gray-600 space-y-1">
-                        <li>Kualitas Terjamin</li>
-                        <li>Stok Selalu Baru</li>
-                        <li>Harga Kompetitif</li>
-                    </ol>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="border-b pb-2">
-                        <p class="text-xs text-gray-500">Harga Cash</p>
-                        <p id="modal-cash-price" class="text-lg font-bold text-green-700"></p>
-                    </div>
-                    <div class="border-b pb-2">
-                        <p class="text-xs text-gray-500">Bayar Gajian</p>
-                        <p id="modal-gajian-price" class="text-lg font-bold text-blue-700"></p>
-                    </div>
-                </div>
-            </div>
-            <div class="mt-6">
-                <button onclick="closeDetailModal()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition">Tutup</button>
+                <button id="modal-buy-now" class="flex-1 bg-green-100 hover:bg-green-200 text-green-700 font-bold py-4 rounded-xl transition">
+                    Beli Sekarang
+                </button>
             </div>
         </div>
     </div>

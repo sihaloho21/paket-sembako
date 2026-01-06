@@ -64,3 +64,28 @@ body.modal-active { overflow-x: hidden; overflow-y: visible !important; }
     align-items: center;
     font-weight: bold;
 }
+
+/* Slider Transition */
+#modal-slider {
+    display: flex;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slider-dot {
+    cursor: pointer;
+}
+
+/* Custom Scrollbar for Modal */
+#detail-modal::-webkit-scrollbar {
+    width: 6px;
+}
+#detail-modal::-webkit-scrollbar-track {
+    background: transparent;
+}
+#detail-modal::-webkit-scrollbar-thumb {
+    background: #e5e7eb;
+    border-radius: 10px;
+}
+#detail-modal::-webkit-scrollbar-thumb:hover {
+    background: #d1d5db;
+}

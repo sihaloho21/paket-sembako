@@ -246,20 +246,136 @@ function shareProduct(name) {
     window.open(waUrl, '_blank');
 }
 
+let sliderInterval;
+let currentSlide = 0;
+
 function showDetail(p) {
+    const pData = JSON.stringify(p).replace(/"/g, '&quot;');
+    
+    // Set Basic Info
     document.getElementById('modal-product-name').innerText = p.nama;
-    document.getElementById('modal-img').src = p.gambar;
     document.getElementById('modal-cash-price').innerText = `Rp ${p.harga.toLocaleString('id-ID')}`;
     document.getElementById('modal-gajian-price').innerText = `Rp ${p.hargaGajian.toLocaleString('id-ID')}`;
     
-    const descList = document.getElementById('modal-desc-list');
-    descList.innerHTML = '';
+    // Set Badges
+    const badgeContainer = document.getElementById('modal-badges');
+    badgeContainer.innerHTML = `
+        <span class="bg-green-100 text-green-700 text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">${p.category}</span>
+    `;
+    if (p.stok > 5) {
+        badgeContainer.innerHTML += `<span class="bg-green-600 text-white text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">Tersedia</span>`;
+    } else if (p.stok > 0) {
+        badgeContainer.innerHTML += `<span class="bg-orange-500 text-white text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">Stok Terbatas</span>`;
+    } else {
+        badgeContainer.innerHTML += `<span class="bg-red-600 text-white text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">Habis</span>`;
+    }
+
+    // Set Savings (Mockup logic: 5% of cash price)
+    const savings = Math.round(p.harga * 0.05);
+    if (savings > 0) {
+        document.getElementById('savings-highlight').classList.remove('hidden');
+        document.getElementById('savings-amount').innerText = `Rp ${savings.toLocaleString('id-ID')}`;
+    } else {
+        document.getElementById('savings-highlight').classList.add('hidden');
+    }
+
+    // Set Itemized List with Icons
+    const itemsList = document.getElementById('modal-items-list');
+    itemsList.innerHTML = '';
     const items = p.deskripsi.split(',');
+    
+    const getIcon = (item) => {
+        item = item.toLowerCase();
+        if (item.includes('beras')) return '📦';
+        if (item.includes('minyak')) return '🧴';
+        if (item.includes('mie') || item.includes('instan')) return '🍜';
+        if (item.includes('gula')) return '🍬';
+        if (item.includes('telur')) return '🥚';
+        if (item.includes('terigu')) return '🌾';
+        if (item.includes('kopi') || item.includes('teh')) return '☕';
+        return '✅';
+    };
+
     items.forEach(item => {
-        const li = document.createElement('li');
-        li.innerText = item.trim();
-        descList.appendChild(li);
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100';
+        div.innerHTML = `
+            <span class="text-xl">${getIcon(item)}</span>
+            <span class="text-sm text-gray-700 font-medium">${item.trim()}</span>
+        `;
+        itemsList.appendChild(div);
     });
+
+    // Setup Image Slider
+    const slider = document.getElementById('modal-slider');
+    const dotsContainer = document.getElementById('slider-dots');
+    // Using multiple images if available in data, otherwise repeat main image for demo
+    const images = p.images ? p.images.split(',') : [p.gambar, p.gambar, p.gambar]; 
+    
+    slider.innerHTML = images.map(img => `
+        <img src="${img.trim()}" class="w-full h-full object-cover flex-shrink-0" onerror="this.src='https://via.placeholder.com/400x300?text=Produk'">
+    `).join('');
+    
+    dotsContainer.innerHTML = images.map((_, i) => `
+        <div class="slider-dot w-2 h-2 rounded-full bg-white/50 transition-all duration-300 ${i === 0 ? 'bg-white w-4' : ''}" data-index="${i}"></div>
+    `).join('');
+
+    // Slider Logic
+    currentSlide = 0;
+    const updateSlider = () => {
+        slider.style.transform = `translateX(-${currentSlide * 100}%)`;
+        document.querySelectorAll('.slider-dot').forEach((dot, i) => {
+            if (i === currentSlide) {
+                dot.classList.add('bg-white', 'w-4');
+                dot.classList.remove('bg-white/50');
+            } else {
+                dot.classList.remove('bg-white', 'w-4');
+                dot.classList.add('bg-white/50');
+            }
+        });
+    };
+
+    const startSlider = () => {
+        clearInterval(sliderInterval);
+        sliderInterval = setInterval(() => {
+            currentSlide = (currentSlide + 1) % images.length;
+            updateSlider();
+        }, 3000);
+    };
+
+    startSlider();
+
+    // Pause on interaction
+    const sliderContainer = slider.parentElement;
+    sliderContainer.onmouseenter = () => clearInterval(sliderInterval);
+    sliderContainer.onmouseleave = startSlider;
+    sliderContainer.ontouchstart = () => clearInterval(sliderInterval);
+    sliderContainer.ontouchend = startSlider;
+
+    // Set Button Actions
+    const addBtn = document.getElementById('modal-add-cart');
+    const buyBtn = document.getElementById('modal-buy-now');
+    
+    addBtn.onclick = () => {
+        addToCart(p);
+        closeDetailModal();
+    };
+    
+    buyBtn.onclick = () => {
+        directOrder(p);
+    };
+
+    if (p.stok === 0) {
+        addBtn.disabled = true;
+        addBtn.classList.add('bg-gray-300', 'cursor-not-allowed');
+        buyBtn.disabled = true;
+        buyBtn.classList.add('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
+    } else {
+        addBtn.disabled = false;
+        addBtn.classList.remove('bg-gray-300', 'cursor-not-allowed');
+        buyBtn.disabled = false;
+        buyBtn.classList.remove('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
+    }
 
     document.getElementById('detail-modal').classList.remove('hidden');
     document.body.classList.add('modal-active');
