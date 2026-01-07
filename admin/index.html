@@ -40,12 +40,12 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
                 Dashboard
             </button>
-            <button onclick="showSection('produk')" id="nav-produk" class="sidebar-item active w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium">
+            <button onclick="showSection('produk')" id="nav-produk" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
                 Produk
             </button>
             <button onclick="showSection('kategori')" id="nav-kategori" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path></svg>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2z"></path></svg>
                 Kategori
             </button>
             <button onclick="showSection('pesanan')" id="nav-pesanan" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium">
@@ -130,10 +130,36 @@
             </section>
 
             <!-- Section: Kategori -->
-            <section id="section-kategori" class="hidden">
+            <section id="section-kategori" class="hidden space-y-6">
                 <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                    <h3 class="text-lg font-bold text-gray-800 mb-4">Manajemen Kategori</h3>
-                    <p class="text-gray-500">Fitur ini akan segera hadir.</p>
+                    <h3 class="text-lg font-bold text-gray-800 mb-6">Tambah Kategori Baru</h3>
+                    <form id="category-form" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Nama Kategori</label>
+                                <input type="text" id="form-category-nama" required placeholder="Contoh: Paket Hemat" class="w-full p-3 border border-gray-300 rounded-xl outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Deskripsi</label>
+                                <input type="text" id="form-category-deskripsi" placeholder="Contoh: Paket sembako dengan harga terjangkau" class="w-full p-3 border border-gray-300 rounded-xl outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100">
+                            </div>
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-bold transition flex items-center gap-2 shadow-lg shadow-green-100">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                Tambah
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="px-8 py-6 border-b border-gray-100">
+                        <h4 class="font-bold text-gray-800">Daftar Kategori <span id="category-count" class="text-gray-500">(0)</span></h4>
+                    </div>
+                    <div id="category-list" class="divide-y divide-gray-100">
+                        <!-- Categories will be loaded here -->
+                    </div>
                 </div>
             </section>
 
@@ -167,7 +193,7 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-bold text-gray-700 mb-1">Opsi Pengiriman</label>
-                                <textarea rows="2" class="w-full p-3 border rounded-xl outline-none focus:border-green-500">Diantar Nikomas - Diantar Kerumah - Ambil Ditempat</textarea>
+                                <textarea rows="2" class="w-full p-3 border rounded-xl outline-none focus:border-green-500">Pengiriman tersedia untuk area Jakarta dan sekitarnya</textarea>
                             </div>
                             <div>
                                 <label class="block text-sm font-bold text-gray-700 mb-1">Jam Operasional</label>
@@ -180,7 +206,7 @@
                         <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
                             <h4 class="font-bold text-blue-800 mb-2">Integrasi API</h4>
                             <label class="block text-xs font-bold text-blue-600 mb-1 uppercase">SheetDB API Endpoint</label>
-                            <input type="text" value="https://sheetdb.io/api/v1/637uvuabexalz" class="w-full p-3 border border-blue-200 rounded-xl outline-none focus:border-blue-500 bg-white text-sm">
+                            <input type="text" value="https://sheetdb.io/api/v1/rga3iyvladqlc" class="w-full p-3 border border-blue-200 rounded-xl outline-none focus:border-blue-500 bg-white text-sm">
                             <p class="text-[10px] text-blue-500 mt-2">Endpoint ini digunakan untuk sinkronisasi data real-time dengan spreadsheet.</p>
                         </div>
                     </div>
@@ -196,7 +222,7 @@
         </main>
     </div>
 
-    <!-- Add/Edit Modal -->
+    <!-- Add/Edit Product Modal -->
     <div id="product-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-8 max-h-[90vh] overflow-y-auto">
             <h3 id="modal-title" class="text-2xl font-bold text-gray-800 mb-6">Tambah Produk</h3>
@@ -219,9 +245,7 @@
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1">Kategori</label>
                     <select id="form-category" class="w-full p-3 border rounded-xl outline-none focus:border-green-500">
-                        <option value="Bahan Pokok">Bahan Pokok</option>
-                        <option value="Paket Hemat">Paket Hemat</option>
-                        <option value="Paket Lengkap">Paket Lengkap</option>
+                        <option value="">-- Pilih Kategori --</option>
                     </select>
                 </div>
                 <div class="space-y-2">
@@ -243,8 +267,12 @@
     </div>
 
     <script>
-        const API_URL = 'https://sheetdb.io/api/v1/637uvuabexalz';
+        const API_URL = 'https://sheetdb.io/api/v1/rga3iyvladqlc';
+        const CATEGORIES_SHEET = 'categories';
+        const PRODUCTS_SHEET = 'Sheet1';
+        
         let allProducts = [];
+        let allCategories = [];
 
         function showSection(sectionId) {
             // Hide all sections
@@ -263,14 +291,202 @@
                 pengaturan: 'Pengaturan'
             };
             document.getElementById('section-title').innerText = titles[sectionId];
+
+            // Load categories when switching to kategori section
+            if (sectionId === 'kategori') {
+                fetchCategories();
+            }
         }
 
+        // ============ CATEGORY FUNCTIONS ============
+        async function fetchCategories() {
+            try {
+                const response = await fetch(`${API_URL}?sheet=${CATEGORIES_SHEET}`);
+                allCategories = await response.json();
+                renderCategoryList();
+                updateCategoryDropdown();
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+                document.getElementById('category-list').innerHTML = '<div class="px-8 py-6 text-center text-red-500">Gagal memuat kategori.</div>';
+            }
+        }
+
+        function renderCategoryList() {
+            const categoryList = document.getElementById('category-list');
+            const categoryCount = document.getElementById('category-count');
+            
+            categoryCount.innerText = `(${allCategories.length})`;
+
+            if (allCategories.length === 0) {
+                categoryList.innerHTML = '<div class="px-8 py-6 text-center text-gray-500">Belum ada kategori. Tambahkan kategori baru untuk memulai.</div>';
+                return;
+            }
+
+            categoryList.innerHTML = allCategories.map(cat => `
+                <div class="px-8 py-4 hover:bg-gray-50 transition flex items-center justify-between">
+                    <div class="flex-1">
+                        <h5 class="font-bold text-gray-800">${cat.nama}</h5>
+                        <p class="text-sm text-gray-500 mt-1">${cat.deskripsi || '-'}</p>
+                    </div>
+                    <div class="flex gap-2 ml-4">
+                        <button onclick='openEditCategoryModal(${JSON.stringify(cat).replace(/'/g, "&apos;")})' class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-5m-7-4l7-7 3 3-7 7H8v3H5v-3"></path></svg>
+                        </button>
+                        <button onclick="handleDeleteCategory('${cat.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Hapus">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateCategoryDropdown() {
+            const select = document.getElementById('form-category');
+            const currentValue = select.value;
+            
+            select.innerHTML = '<option value="">-- Pilih Kategori --</option>';
+            allCategories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.nama;
+                option.textContent = cat.nama;
+                select.appendChild(option);
+            });
+            
+            select.value = currentValue;
+        }
+
+        function openEditCategoryModal(category) {
+            const modal = document.createElement('div');
+            modal.id = 'edit-category-modal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-8">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-6">Edit Kategori</h3>
+                    <form id="edit-category-form" class="space-y-4">
+                        <input type="hidden" id="edit-category-id" value="${category.id}">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Nama Kategori</label>
+                            <input type="text" id="edit-category-nama" value="${category.nama}" required class="w-full p-3 border border-gray-300 rounded-xl outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Deskripsi</label>
+                            <input type="text" id="edit-category-deskripsi" value="${category.deskripsi || ''}" class="w-full p-3 border border-gray-300 rounded-xl outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100">
+                        </div>
+                        <div class="flex gap-3 pt-4">
+                            <button type="button" onclick="closeEditCategoryModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition">Batal</button>
+                            <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            document.getElementById('edit-category-form').onsubmit = async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('edit-category-id').value;
+                const nama = document.getElementById('edit-category-nama').value;
+                const deskripsi = document.getElementById('edit-category-deskripsi').value;
+
+                try {
+                    const response = await fetch(`${API_URL}?sheet=${CATEGORIES_SHEET}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            data: {
+                                id: id,
+                                nama: nama,
+                                deskripsi: deskripsi
+                            }
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (result.updated || result.affected > 0) {
+                        alert('Kategori berhasil diperbarui!');
+                        closeEditCategoryModal();
+                        fetchCategories();
+                    } else {
+                        throw new Error(JSON.stringify(result));
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Gagal memperbarui kategori.');
+                }
+            };
+        }
+
+        function closeEditCategoryModal() {
+            const modal = document.getElementById('edit-category-modal');
+            if (modal) modal.remove();
+        }
+
+        async function handleDeleteCategory(id) {
+            if (!confirm('Yakin ingin menghapus kategori ini?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}?sheet=${CATEGORIES_SHEET}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id })
+                });
+
+                const result = await response.json();
+                if (result.deleted || result.affected > 0) {
+                    alert('Kategori berhasil dihapus!');
+                    fetchCategories();
+                } else {
+                    throw new Error(JSON.stringify(result));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Gagal menghapus kategori.');
+            }
+        }
+
+        document.getElementById('category-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const nama = document.getElementById('form-category-nama').value.trim();
+            const deskripsi = document.getElementById('form-category-deskripsi').value.trim();
+
+            if (!nama) {
+                alert('Nama kategori tidak boleh kosong!');
+                return;
+            }
+
+            const data = {
+                id: Date.now().toString(),
+                nama: nama,
+                deskripsi: deskripsi
+            };
+
+            try {
+                const response = await fetch(`${API_URL}?sheet=${CATEGORIES_SHEET}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: [data] })
+                });
+
+                const result = await response.json();
+                if (result.created || result.affected > 0) {
+                    alert('Kategori berhasil ditambahkan!');
+                    document.getElementById('category-form').reset();
+                    fetchCategories();
+                } else {
+                    throw new Error(JSON.stringify(result));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Gagal menambahkan kategori.');
+            }
+        };
+
+        // ============ PRODUCT FUNCTIONS ============
         async function fetchAdminProducts() {
             const tbody = document.getElementById('admin-product-list');
             tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-gray-500">Memuat data...</td></tr>';
             
             try {
-                const response = await fetch(API_URL);
+                const response = await fetch(`${API_URL}?sheet=${PRODUCTS_SHEET}`);
                 allProducts = await response.json();
                 renderAdminTable();
                 updateStats();
@@ -314,7 +530,7 @@
                     <td class="px-6 py-4 text-right">
                         <div class="flex justify-end gap-2">
                             <button onclick='openEditModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-5M16.242 3.758a2.121 2.121 0 013 3L12.758 13.5a1 1 0 01-.393.242l-3 1a1 1 0 01-1.213-1.213l1-3a1 1 0 01.242-.393l7.485-7.485z"></path></svg>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-5m-7-4l7-7 3 3-7 7H8v3H5v-3"></path></svg>
                             </button>
                             <button onclick="handleDelete('${p.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -338,7 +554,7 @@
             document.getElementById('form-nama').value = p.nama;
             document.getElementById('form-harga').value = p.harga;
             document.getElementById('form-stok').value = p.stok;
-            document.getElementById('form-category').value = p.kategori || 'Bahan Pokok';
+            document.getElementById('form-category').value = p.kategori || '';
             
             const images = p.gambar ? p.gambar.split(',') : [];
             document.getElementById('form-gambar-1').value = images[0] || '';
@@ -357,11 +573,13 @@
             if (!confirm('Yakin ingin menghapus produk ini?')) return;
             
             try {
-                const response = await fetch(`${API_URL}/id/${id}`, {
-                    method: 'DELETE'
+                const response = await fetch(`${API_URL}?sheet=${PRODUCTS_SHEET}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id })
                 });
                 const result = await response.json();
-                if (result.deleted) {
+                if (result.deleted || result.affected > 0) {
                     alert('Produk berhasil dihapus!');
                     fetchAdminProducts();
                 }
@@ -397,13 +615,13 @@
             try {
                 let response;
                 if (id) {
-                    response = await fetch(`${API_URL}/id/${id}`, {
-                        method: 'PATCH',
+                    response = await fetch(`${API_URL}?sheet=${PRODUCTS_SHEET}`, {
+                        method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ data: data })
                     });
                 } else {
-                    response = await fetch(API_URL, {
+                    response = await fetch(`${API_URL}?sheet=${PRODUCTS_SHEET}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ data: [data] })
@@ -427,7 +645,9 @@
             }
         };
 
+        // Initialize
         fetchAdminProducts();
+        fetchCategories();
     </script>
 </body>
 </html>
