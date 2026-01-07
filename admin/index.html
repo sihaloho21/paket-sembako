@@ -302,12 +302,31 @@
         async function fetchCategories() {
             try {
                 const response = await fetch(`${API_URL}?sheet=${CATEGORIES_SHEET}`);
-                allCategories = await response.json();
-                renderCategoryList();
-                updateCategoryDropdown();
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('SheetDB Error:', data.error);
+                    if (data.error === 'Sheet not found.') {
+                        document.getElementById('category-list').innerHTML = `
+                            <div class="px-8 py-10 text-center">
+                                <div class="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl mb-4 text-sm">
+                                    <strong>Sheet "categories" tidak ditemukan!</strong><br>
+                                    Silakan buat sheet baru bernama <b>categories</b> di Google Sheets Anda dengan kolom: <b>id, nama, deskripsi</b>.
+                                </div>
+                                <a href="https://docs.google.com/spreadsheets/d/174qAwA2hddfQOFUFDx7czOtpRlD9WUiiIaf6Yao8WRc/edit" target="_blank" class="text-green-600 font-bold hover:underline text-sm">Buka Google Sheets &rarr;</a>
+                            </div>`;
+                        allCategories = [];
+                    } else {
+                        throw new Error(data.error);
+                    }
+                } else {
+                    allCategories = Array.isArray(data) ? data : [];
+                    renderCategoryList();
+                    updateCategoryDropdown();
+                }
             } catch (error) {
                 console.error('Error fetching categories:', error);
-                document.getElementById('category-list').innerHTML = '<div class="px-8 py-6 text-center text-red-500">Gagal memuat kategori.</div>';
+                document.getElementById('category-list').innerHTML = '<div class="px-8 py-6 text-center text-red-500">Gagal memuat kategori. Pastikan koneksi internet stabil.</div>';
             }
         }
 
@@ -471,6 +490,8 @@
                     alert('Kategori berhasil ditambahkan!');
                     document.getElementById('category-form').reset();
                     fetchCategories();
+                } else if (result.error === 'Sheet not found.') {
+                    alert('Gagal: Sheet "categories" tidak ditemukan di Google Sheets. Silakan buat sheet tersebut terlebih dahulu.');
                 } else {
                     throw new Error(JSON.stringify(result));
                 }
