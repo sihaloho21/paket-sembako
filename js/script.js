@@ -594,10 +594,49 @@ ${itemDetails}
 Mohon segera diproses, terima kasih!`;
 
     const waUrl = `https://wa.me/628993370200?text=${encodeURIComponent(message)}`;
-    window.open(waUrl, '_blank');
     
-    cart = [];
-    saveCart();
-    updateCartUI();
-    closeOrderModal();
+    // Record order to SheetDB
+    const orderId = 'ORD-' + Date.now().toString().slice(-6);
+    const orderData = {
+        id: orderId,
+        pelanggan: name || 'Pelanggan',
+        produk: cart.map(item => `${item.nama} (x${item.qty})`).join(', '),
+        qty: cart.reduce((sum, item) => sum + item.qty, 0),
+        total: grandTotal,
+        status: 'Menunggu',
+        tanggal: new Date().toLocaleString('id-ID')
+    };
+
+    const submitBtn = document.querySelector('button[onclick="sendToWA()"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span>⌛ Memproses Pesanan...</span>';
+
+    fetch(`${API_URL}?sheet=orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: orderData })
+    })
+    .then(response => response.json())
+    .then(result => {
+        console.log('Order recorded:', result);
+        window.open(waUrl, '_blank');
+        cart = [];
+        saveCart();
+        updateCartUI();
+        closeOrderModal();
+    })
+    .catch(error => {
+        console.error('Error recording order:', error);
+        // Still open WA even if recording fails, but alert the user
+        window.open(waUrl, '_blank');
+        cart = [];
+        saveCart();
+        updateCartUI();
+        closeOrderModal();
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    });
 }
