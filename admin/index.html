@@ -129,11 +129,14 @@
                 return;
             }
 
-            tbody.innerHTML = allProducts.map(p => `
+            tbody.innerHTML = allProducts.map(p => {
+                const images = p.gambar ? p.gambar.split(',') : [];
+                const mainImage = images[0] || 'https://via.placeholder.com/50x50';
+                return `
                 <tr class="border-b hover:bg-gray-50 transition">
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
-                            <img src="${p.gambar}" class="w-12 h-12 object-cover rounded-lg bg-gray-100" onerror="this.src='https://via.placeholder.com/50x50'">
+                            <img src="${mainImage}" class="w-12 h-12 object-cover rounded-lg bg-gray-100" onerror="this.src='https://via.placeholder.com/50x50'">
                             <span class="font-bold text-gray-800">${p.nama}</span>
                         </div>
                     </td>
@@ -151,7 +154,7 @@
                         </div>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         function openAddModal() {
@@ -170,7 +173,7 @@
             document.getElementById('form-category').value = p.kategori || 'Bahan Pokok';
             
             // Handle multiple images
-            const images = p.images ? p.images.split(',') : [p.gambar];
+            const images = p.gambar ? p.gambar.split(',') : [];
             document.getElementById('form-gambar-1').value = images[0] || '';
             document.getElementById('form-gambar-2').value = images[1] || '';
             document.getElementById('form-gambar-3').value = images[2] || '';
@@ -212,6 +215,7 @@
             const img2 = document.getElementById('form-gambar-2').value.trim();
             const img3 = document.getElementById('form-gambar-3').value.trim();
             const imagesArray = [img1, img2, img3].filter(img => img !== '');
+            const imagesString = imagesArray.join(',');
 
             const data = {
                 id: id || Date.now().toString(),
@@ -219,8 +223,7 @@
                 harga: document.getElementById('form-harga').value,
                 stok: document.getElementById('form-stok').value,
                 kategori: document.getElementById('form-category').value,
-                gambar: img1, // Main image for catalog
-                images: imagesArray.join(','), // Multiple images for slider
+                gambar: imagesString,
                 deskripsi: document.getElementById('form-deskripsi').value
             };
 

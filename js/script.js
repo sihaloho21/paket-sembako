@@ -38,9 +38,11 @@ async function fetchProducts() {
             const gajianInfo = calculateGajianPrice(cashPrice);
             
             // Determine category based on price or name (logic can be adjusted)
-            let category = 'Bahan Pokok';
-            if (cashPrice >= 150000) category = 'Paket Lengkap';
-            else if (cashPrice >= 50000) category = 'Paket Hemat';
+            let category = p.kategori || 'Bahan Pokok';
+            if (!p.kategori) {
+                if (cashPrice >= 150000) category = 'Paket Lengkap';
+                else if (cashPrice >= 50000) category = 'Paket Hemat';
+            }
             
             // Dummy descriptions if empty
             const dummyDesc = "Beras Premium 5kg, Minyak Goreng 1L, Gula Pasir 1kg, Mie Instan 5 pcs, Teh Celup 1 box";
@@ -82,10 +84,12 @@ function renderProducts(products) {
         }
 
         const pData = JSON.stringify(p).replace(/"/g, '&quot;');
+        const images = p.gambar ? p.gambar.split(',') : [];
+        const mainImage = images[0] || 'https://via.placeholder.com/300x200?text=Produk';
 
         grid.innerHTML += `
             <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition duration-300 relative">
-                <img src="${p.gambar}" alt="${p.nama}" class="w-full h-48 object-cover ${p.stok === 0 ? 'grayscale opacity-60' : ''}" onerror="this.src='https://via.placeholder.com/300x200?text=Produk'">
+                <img src="${mainImage}" alt="${p.nama}" class="w-full h-48 object-cover ${p.stok === 0 ? 'grayscale opacity-60' : ''}" onerror="this.src='https://via.placeholder.com/300x200?text=Produk'">
                 <div class="p-6">
                     <div class="flex justify-between items-start mb-2">
                         <h4 class="text-lg font-bold text-gray-800">${p.nama}</h4>
@@ -191,9 +195,11 @@ function updateCartUI() {
         let total = 0;
         itemsContainer.innerHTML = cart.map((item, index) => {
             total += item.harga * item.qty;
+            const images = item.gambar ? item.gambar.split(',') : [];
+            const mainImage = images[0] || 'https://via.placeholder.com/100x100?text=Produk';
             return `
                 <div class="flex items-center gap-4 bg-gray-50 p-3 rounded-xl">
-                    <img src="${item.gambar}" class="w-16 h-16 object-cover rounded-lg">
+                    <img src="${mainImage}" class="w-16 h-16 object-cover rounded-lg">
                     <div class="flex-1">
                         <h5 class="font-bold text-gray-800 text-sm">${item.nama}</h5>
                         <p class="text-green-600 font-bold text-xs">Rp ${item.harga.toLocaleString('id-ID')}</p>
@@ -203,7 +209,7 @@ function updateCartUI() {
                             <button onclick="updateQty(${index}, 1)" class="w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-500">+</button>
                         </div>
                     </div>
-                    <button onclick="removeItem(${index})" class="text-red-400 hover:text-red-600">
+                    <button onclick="removeFromCart(${index})" class="text-red-400 hover:text-red-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
                 </div>
@@ -215,14 +221,12 @@ function updateCartUI() {
 
 function updateQty(index, delta) {
     cart[index].qty += delta;
-    if (cart[index].qty < 1) {
-        cart.splice(index, 1);
-    }
+    if (cart[index].qty < 1) cart.splice(index, 1);
     saveCart();
     updateCartUI();
 }
 
-function removeItem(index) {
+function removeFromCart(index) {
     cart.splice(index, 1);
     saveCart();
     updateCartUI();
@@ -238,65 +242,41 @@ function closeCartModal() {
     document.body.classList.remove('modal-active');
 }
 
-function shareProduct(name) {
-    const title = `*Harapan Jaya – Paket Sembako Murah*`;
-    const content = `Halo! Saya baru saja melihat *${name}* di Harapan Jaya. Harganya murah dan kualitasnya terjamin!`;
-    const link = "Link: https://darling-dusk-76d7fb.netlify.app/";
-    const closing = "Yuk cek katalog lengkapnya di sini!";
-    
-    const message = `${title}\n\n${content}\n\n${link}\n\n${closing}`;
-    const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(waUrl, '_blank');
-}
-
-let sliderInterval;
 let currentSlide = 0;
+let sliderInterval;
 
 function showDetail(p) {
-    const pData = JSON.stringify(p).replace(/"/g, '&quot;');
-    
+    const itemsList = document.getElementById('modal-items-list');
+    const badges = document.getElementById('modal-badges');
+    itemsList.innerHTML = '';
+    badges.innerHTML = '';
+
     // Set Basic Info
     document.getElementById('modal-product-name').innerText = p.nama;
     document.getElementById('modal-cash-price').innerText = `Rp ${p.harga.toLocaleString('id-ID')}`;
     document.getElementById('modal-gajian-price').innerText = `Rp ${p.hargaGajian.toLocaleString('id-ID')}`;
-    
-    // Set Badges
-    const badgeContainer = document.getElementById('modal-badges');
-    badgeContainer.innerHTML = `
-        <span class="bg-green-100 text-green-700 text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">${p.category}</span>
+
+    // Badges
+    const badgeClass = "px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider";
+    badges.innerHTML = `
+        <span class="bg-green-100 text-green-700 ${badgeClass}">${p.category}</span>
+        ${p.stok <= 5 ? `<span class="bg-orange-100 text-orange-700 ${badgeClass}">Stok Terbatas</span>` : ''}
     `;
-    if (p.stok > 5) {
-        badgeContainer.innerHTML += `<span class="bg-green-600 text-white text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">Tersedia</span>`;
-    } else if (p.stok > 0) {
-        badgeContainer.innerHTML += `<span class="bg-orange-500 text-white text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">Stok Terbatas</span>`;
-    } else {
-        badgeContainer.innerHTML += `<span class="bg-red-600 text-white text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">Habis</span>`;
-    }
 
-    // Set Savings (Mockup logic: 5% of cash price)
-    const savings = Math.round(p.harga * 0.05);
-    if (savings > 0) {
-        document.getElementById('savings-highlight').classList.remove('hidden');
-        document.getElementById('savings-amount').innerText = `Rp ${savings.toLocaleString('id-ID')}`;
-    } else {
-        document.getElementById('savings-highlight').classList.add('hidden');
-    }
+    // Savings Highlight
+    const savings = Math.round(p.harga * 0.15); // Dummy savings logic
+    document.getElementById('savings-amount').innerText = `Rp ${savings.toLocaleString('id-ID')}`;
+    document.getElementById('savings-highlight').classList.remove('hidden');
 
-    // Set Itemized List with Icons
-    const itemsList = document.getElementById('modal-items-list');
-    itemsList.innerHTML = '';
+    // Items List
     const items = p.deskripsi.split(',');
-    
-    const getIcon = (item) => {
-        item = item.toLowerCase();
-        if (item.includes('beras')) return '📦';
-        if (item.includes('minyak')) return '🧴';
-        if (item.includes('mie') || item.includes('instan')) return '🍜';
-        if (item.includes('gula')) return '🍬';
-        if (item.includes('telur')) return '🥚';
-        if (item.includes('terigu')) return '🌾';
-        if (item.includes('kopi') || item.includes('teh')) return '☕';
-        return '✅';
+    const getIcon = (name) => {
+        if (name.includes('Beras')) return '🌾';
+        if (name.includes('Minyak')) return '🧪';
+        if (name.includes('Gula')) return '🍬';
+        if (name.includes('Mie')) return '🍜';
+        if (name.includes('Teh')) return '☕';
+        return '📦';
     };
 
     items.forEach(item => {
@@ -312,8 +292,7 @@ function showDetail(p) {
     // Setup Image Slider
     const slider = document.getElementById('modal-slider');
     const dotsContainer = document.getElementById('slider-dots');
-    // Using multiple images if available in data, otherwise repeat main image for demo
-    const images = p.images ? p.images.split(',') : [p.gambar, p.gambar, p.gambar]; 
+    const images = p.gambar ? p.gambar.split(',') : ['https://via.placeholder.com/400x300?text=Produk']; 
     
     slider.innerHTML = images.map(img => `
         <img src="${img.trim()}" class="w-full h-full object-cover flex-shrink-0" onerror="this.src='https://via.placeholder.com/400x300?text=Produk'">
@@ -451,86 +430,19 @@ function toggleLocationField() {
     
     if (shipEl) {
         locationField.classList.remove('hidden');
-        if (shipEl.value === 'Diantar Kerumah') {
+        if (shipEl.value === 'Antar Nikomas' || shipEl.value === 'Antar Kerumah') {
             deliveryUI.classList.remove('hidden');
             pickupUI.classList.add('hidden');
-        } else if (shipEl.value === 'Ambil Ditempat') {
+        } else {
             deliveryUI.classList.add('hidden');
             pickupUI.classList.remove('hidden');
-            document.getElementById('location-link').value = "https://maps.app.goo.gl/JExkrRvR5PBah9oaA";
-        } else {
-            locationField.classList.add('hidden');
-            document.getElementById('location-link').value = "";
         }
-    } else {
-        locationField.classList.add('hidden');
     }
-}
-
-function getCurrentLocation() {
-    const btn = document.getElementById('get-location-btn');
-    const originalText = '<span>📍 Bagikan Lokasi Saya</span>';
-    btn.disabled = true;
-    btn.innerHTML = '<span>⌛ Mencari Lokasi...</span>';
-
-    if (!navigator.geolocation) {
-        alert("Geolocation tidak didukung oleh browser Anda.");
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-        return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            const mapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
-            document.getElementById('location-link').value = mapsUrl;
-            btn.disabled = false;
-            btn.classList.remove('bg-blue-50', 'text-blue-700', 'border-blue-200');
-            btn.classList.add('bg-green-50', 'text-green-700', 'border-green-200');
-            btn.innerHTML = '<span>✅ Lokasi Berhasil Dibagikan</span>';
-        },
-        (error) => {
-            let msg = "Gagal mengambil lokasi.";
-            if (error.code === 1) msg = "Izin lokasi ditolak. Silakan aktifkan izin lokasi di browser Anda.";
-            alert(msg);
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
 }
 
 function updateOrderTotal() {
-    const payEl = document.querySelector('input[name="pay-method"]:checked');
-    const isGajian = payEl && payEl.value === 'Bayar Gajian';
-    
-    const total = cart.reduce((sum, item) => {
-        const price = isGajian ? item.hargaGajian : item.harga;
-        return sum + (price * item.qty);
-    }, 0);
-    
-    const formattedTotal = `Rp ${total.toLocaleString('id-ID')}`;
-    document.getElementById('order-final-total').innerText = formattedTotal;
-    
-    const stickyTotal = document.getElementById('sticky-order-total');
-    if (stickyTotal) {
-        stickyTotal.innerText = formattedTotal;
-    }
-}
-
-function showQRISModal() {
-    document.getElementById('qris-modal').classList.remove('hidden');
-    document.body.classList.add('modal-active');
-}
-
-function closeQRISModal() {
-    document.getElementById('qris-modal').classList.add('hidden');
-    // Don't remove modal-active if order-modal is still open
-    if (document.getElementById('order-modal').classList.contains('hidden')) {
-        document.body.classList.remove('modal-active');
-    }
+    const total = cart.reduce((sum, item) => sum + item.harga * item.qty, 0);
+    document.getElementById('order-total').innerText = `Rp ${total.toLocaleString('id-ID')}`;
 }
 
 function closeOrderModal() {
@@ -538,104 +450,89 @@ function closeOrderModal() {
     document.body.classList.remove('modal-active');
 }
 
-function sendToWA() {
-    const name = document.getElementById('customer-name').value.trim();
-    const shipEl = document.querySelector('input[name="ship-method"]:checked');
-    const payEl = document.querySelector('input[name="pay-method"]:checked');
-    const locationLink = document.getElementById('location-link').value.trim();
+async function submitOrder() {
+    const name = document.getElementById('customer-name').value;
+    const shipMethod = document.querySelector('input[name="ship-method"]:checked')?.value;
+    const payMethod = document.querySelector('input[name="pay-method"]:checked')?.value;
+    const location = document.getElementById('location-link').value;
 
-    if (!shipEl || !payEl) {
-        alert("Silakan pilih metode pengiriman dan pembayaran terlebih dahulu!");
+    if (!name || !shipMethod || !payMethod) {
+        alert('Mohon lengkapi data pemesanan.');
         return;
     }
 
-    const ship = shipEl.value;
-    const pay = payEl.value;
+    const total = cart.reduce((sum, item) => sum + item.harga * item.qty, 0);
+    const itemsText = cart.map(item => `- ${item.nama} (x${item.qty})`).join('\n');
     
-    if (ship === 'Diantar Kerumah' && !locationLink) {
-        alert("Silakan bagikan lokasi Anda terlebih dahulu!");
-        return;
-    }
+    const message = `*PESANAN BARU - HARAPAN JAYA*\n\n` +
+                    `*Nama:* ${name}\n` +
+                    `*Metode:* ${shipMethod}\n` +
+                    `*Pembayaran:* ${payMethod}\n` +
+                    `*Lokasi:* ${location || '-'}\n\n` +
+                    `*Item:*\n${itemsText}\n\n` +
+                    `*Total Estimasi:* Rp ${total.toLocaleString('id-ID')}\n\n` +
+                    `Mohon segera diproses. Terima kasih!`;
 
-    const isGajian = pay === 'Bayar Gajian';
-    const isQRIS = pay === 'QRIS';
-    const now = new Date();
-    const wibOffset = 7 * 60 * 60 * 1000;
-    const nowWIB = new Date(now.getTime() + wibOffset);
-    const dateStr = nowWIB.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const waUrl = `https://wa.me/628993370200?text=${encodeURIComponent(message)}`;
     
-    let itemDetails = "";
-    let grandTotal = 0;
+    // Log to SheetDB (Optional but good for tracking)
+    try {
+        await fetch('https://sheetdb.io/api/v1/637uvuabexalz?sheet=logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                data: [{
+                    timestamp: new Date().toLocaleString(),
+                    nama: name,
+                    pesanan: itemsText,
+                    total: total,
+                    metode: shipMethod,
+                    pembayaran: payMethod
+                }]
+            })
+        });
+    } catch (e) { console.error(e); }
 
-    cart.forEach((item, index) => {
-        const price = isGajian ? item.hargaGajian : item.harga;
-        const subtotal = price * item.qty;
-        grandTotal += subtotal;
-        itemDetails += `${index + 1}. ${item.nama} (x${item.qty})\n   Harga: Rp ${price.toLocaleString('id-ID')}\n   Subtotal: Rp ${subtotal.toLocaleString('id-ID')}\n`;
-    });
-    
-    let locationInfo = "";
-    if (locationLink) {
-        locationInfo = `*Link Lokasi:* ${locationLink}\n`;
-    }
-
-    const message = `*PESANAN BARU - HARAPAN JAYA*
-------------------------------------------
-*Tanggal Pemesanan:* ${dateStr}
-*Atas Nama:* ${name || '-'}
-*Metode Bayar:* ${pay}${isQRIS ? ' (Sudah Bayar via QRIS)' : ''}
-*Pengiriman:* ${ship}
-${locationInfo}
-*Daftar Belanja:*
-${itemDetails}
-------------------------------------------
-*TOTAL BAYAR: Rp ${grandTotal.toLocaleString('id-ID')}*
-
-Mohon segera diproses, terima kasih!`;
-
-    const waUrl = `https://wa.me/6281234567890?text=${encodeURIComponent(message)}`;
     window.open(waUrl, '_blank');
-    
     cart = [];
     saveCart();
     updateCartUI();
     closeOrderModal();
+    alert('Pesanan Anda telah diteruskan ke WhatsApp!');
 }
 
-// Notification Logic
-const firstNames = ["An***", "Bu***", "Ci***", "De***", "Ed***", "Fa***", "Gi***", "Ha***", "Ir***", "Ju***", "Ku***", "Li***", "Mu***", "Nu***", "Ri***", "Sa***", "Ti***", "Wi***", "Yu***"];
-
-function showNotification() {
-    if (allProducts.length === 0) return;
-    
-    const randomName = firstNames[Math.floor(Math.random() * firstNames.length)];
-    const randomProduct = allProducts[Math.floor(Math.random() * allProducts.length)];
-    const notifEl = document.getElementById('order-notification');
-    const notifText = document.getElementById('notif-text');
-    
-    if (notifText) {
-        notifText.innerHTML = `<strong>${randomName}</strong> Pesan <strong>${randomProduct.nama}</strong>!`;
-        
-        notifEl.classList.remove('hidden', 'notification-out');
-        notifEl.classList.add('notification-in');
-        
-        setTimeout(() => {
-            notifEl.classList.remove('notification-in');
-            notifEl.classList.add('notification-out');
-            setTimeout(() => {
-                notifEl.classList.add('hidden');
-            }, 500);
-        }, 5000);
-    }
+function shareProduct(name) {
+    const text = `Cek paket sembako murah "${name}" di Harapan Jaya! Kualitas terjamin, harga bersahabat.`;
+    const url = window.location.href;
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`;
+    window.open(waUrl, '_blank');
 }
 
 function startNotificationLoop() {
-    setTimeout(() => {
-        showNotification();
-        setInterval(() => {
-            showNotification();
-        }, Math.floor(Math.random() * 10000) + 10000);
-    }, 3000);
+    const names = ['Siti', 'Budi', 'Ani', 'Joko', 'Rina', 'Agus', 'Dewi', 'Eko'];
+    const products = ['Paket Sembako 1', 'Paket Sembako 2', 'Beras Premium', 'Minyak Goreng'];
+    
+    setInterval(() => {
+        if (Math.random() > 0.7) {
+            const name = names[Math.floor(Math.random() * names.names.length)];
+            const product = products[Math.floor(Math.random() * products.length)];
+            showNotification(`${name} baru saja membeli ${product}`);
+        }
+    }, 15000);
 }
 
+function showNotification(text) {
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-24 left-4 bg-white/90 backdrop-blur shadow-lg rounded-xl p-3 flex items-center gap-3 border border-green-100 z-50 animate-bounce';
+    toast.innerHTML = `
+        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V5h2v4z"></path></svg>
+        </div>
+        <p class="text-xs font-medium text-gray-700">${text}</p>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+}
+
+// Initialize
 fetchProducts();
