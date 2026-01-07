@@ -314,13 +314,43 @@ function closeDetailModal() {
 function directOrder(p) {
     cart = [{ ...p, qty: 1 }];
     saveCart();
+    updateCartUI();
     openOrderModal();
+}
+
+function directOrderFromModal() {
+    const name = document.getElementById('modal-product-name').innerText;
+    const product = allProducts.find(p => p.nama === name);
+    if (product) {
+        directOrder(product);
+        closeDetailModal();
+    }
 }
 
 function openOrderModal() {
     if (cart.length === 0) return;
     
     closeCartModal();
+    
+    // Update Order Summary
+    const summaryEl = document.getElementById('order-summary');
+    const payEl = document.querySelector('input[name="pay-method"]:checked');
+    const isGajian = payEl && payEl.value === 'Bayar Gajian';
+    
+    if (summaryEl) {
+        summaryEl.innerHTML = cart.map(item => {
+            const price = isGajian ? item.hargaGajian : item.harga;
+            return `
+                <div class="flex justify-between">
+                    <span>${item.nama} (x${item.qty})</span>
+                    <span>Rp ${(price * item.qty).toLocaleString('id-ID')}</span>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    updateOrderTotal();
+
     const modal = document.getElementById('order-modal');
     if (modal) {
         modal.classList.remove('hidden');
@@ -372,6 +402,19 @@ function showNotification(text) {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     fetchProducts();
+
+    // Add event listener for detail modal add to cart button
+    const modalAddCartBtn = document.getElementById('modal-add-cart');
+    if (modalAddCartBtn) {
+        modalAddCartBtn.addEventListener('click', () => {
+            const name = document.getElementById('modal-product-name').innerText;
+            const product = allProducts.find(p => p.nama === name);
+            if (product) {
+                addToCart(product);
+                closeDetailModal();
+            }
+        });
+    }
 });
 
 function toggleLocationField() {
@@ -455,6 +498,23 @@ function updateOrderTotal() {
     
     const finalTotalEl = document.getElementById('order-final-total');
     if (finalTotalEl) finalTotalEl.innerText = `Rp ${total.toLocaleString('id-ID')}`;
+    
+    const stickyTotalEl = document.getElementById('sticky-order-total');
+    if (stickyTotalEl) stickyTotalEl.innerText = `Rp ${total.toLocaleString('id-ID')}`;
+
+    // Also update summary if modal is open
+    const summaryEl = document.getElementById('order-summary');
+    if (summaryEl && document.getElementById('order-modal').classList.contains('hidden') === false) {
+        summaryEl.innerHTML = cart.map(item => {
+            const price = isGajian ? item.hargaGajian : item.harga;
+            return `
+                <div class="flex justify-between">
+                    <span>${item.nama} (x${item.qty})</span>
+                    <span>Rp ${(price * item.qty).toLocaleString('id-ID')}</span>
+                </div>
+            `;
+        }).join('');
+    }
 }
 
 function showQRISModal() {
