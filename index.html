@@ -90,21 +90,8 @@
                 </div>
 
                 <div class="p-6 space-y-5">
-                    <!-- Header: Title & Badges -->
-                    <div class="space-y-2">
-                        <div class="flex flex-wrap gap-2" id="modal-badges">
-                            <!-- Badges injected here -->
-                        </div>
-                        <h3 id="modal-product-name" class="text-2xl font-bold text-gray-800 leading-tight">Rincian Produk</h3>
-                    </div>
-
-                    <!-- Savings Highlight -->
-                    <div id="savings-highlight" class="hidden">
-                        <div class="bg-orange-50 border border-orange-100 text-orange-700 px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1a1 1 0 112 0v1a1 1 0 11-2 0zM13.536 14.243a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414-1.414l.707-.707zM16.243 5.05a1 1 0 10-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707z"></path></svg>
-                            <span>Hemat <span id="savings-amount" class="font-bold"></span> dibanding harga pasar</span>
-                        </div>
-                    </div>
+                    <!-- Header: Title -->
+                    <h3 id="modal-product-name" class="text-2xl font-bold text-gray-800 leading-tight">Rincian Produk</h3>
 
                     <!-- Itemized List -->
                     <div class="space-y-3">
@@ -143,9 +130,9 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                     + Keranjang
                 </button>
-<button id="modal-buy-now" onclick="directOrderFromModal()" class="flex-1 bg-green-100 hover:bg-green-200 text-green-700 font-bold py-4 rounded-xl transition">
-    Beli Sekarang
-</button>
+                <button id="modal-buy-now" onclick="directOrderFromModal()" class="flex-1 bg-green-100 hover:bg-green-200 text-green-700 font-bold py-4 rounded-xl transition">
+                    Beli Sekarang
+                </button>
             </div>
         </div>
     </div>

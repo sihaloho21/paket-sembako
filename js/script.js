@@ -269,8 +269,6 @@ function showDetail(p) {
     const cashPriceEl = document.getElementById('modal-cash-price');
     const gajianPriceEl = document.getElementById('modal-gajian-price');
     const itemsListEl = document.getElementById('modal-items-list');
-    const savingsHighlight = document.getElementById('savings-highlight');
-    const savingsAmount = document.getElementById('savings-amount');
 
     if (nameEl) nameEl.innerText = p.nama;
     if (cashPriceEl) cashPriceEl.innerText = `Rp ${p.harga.toLocaleString('id-ID')}`;
