@@ -86,9 +86,11 @@
                         <option value="Paket Lengkap">Paket Lengkap</option>
                     </select>
                 </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">URL Gambar</label>
-                    <input type="text" id="form-gambar" required class="w-full p-3 border rounded-xl outline-none focus:border-green-500">
+                <div class="space-y-2">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">URL Gambar (Maksimal 3)</label>
+                    <input type="text" id="form-gambar-1" required class="w-full p-3 border rounded-xl outline-none focus:border-green-500" placeholder="URL Gambar 1 (Utama)">
+                    <input type="text" id="form-gambar-2" class="w-full p-3 border rounded-xl outline-none focus:border-green-500" placeholder="URL Gambar 2 (Opsional)">
+                    <input type="text" id="form-gambar-3" class="w-full p-3 border rounded-xl outline-none focus:border-green-500" placeholder="URL Gambar 3 (Opsional)">
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1">Deskripsi</label>
@@ -166,7 +168,13 @@
             document.getElementById('form-harga').value = p.harga;
             document.getElementById('form-stok').value = p.stok;
             document.getElementById('form-category').value = p.kategori || 'Bahan Pokok';
-            document.getElementById('form-gambar').value = p.gambar;
+            
+            // Handle multiple images
+            const images = p.images ? p.images.split(',') : [p.gambar];
+            document.getElementById('form-gambar-1').value = images[0] || '';
+            document.getElementById('form-gambar-2').value = images[1] || '';
+            document.getElementById('form-gambar-3').value = images[2] || '';
+            
             document.getElementById('form-deskripsi').value = p.deskripsi || '';
             document.getElementById('product-modal').classList.remove('hidden');
         }
@@ -200,13 +208,19 @@
             submitBtn.disabled = true;
             submitBtn.innerText = 'Menyimpan...';
 
+            const img1 = document.getElementById('form-gambar-1').value.trim();
+            const img2 = document.getElementById('form-gambar-2').value.trim();
+            const img3 = document.getElementById('form-gambar-3').value.trim();
+            const imagesArray = [img1, img2, img3].filter(img => img !== '');
+
             const data = {
                 id: id || Date.now().toString(),
                 nama: document.getElementById('form-nama').value,
                 harga: document.getElementById('form-harga').value,
                 stok: document.getElementById('form-stok').value,
                 kategori: document.getElementById('form-category').value,
-                gambar: document.getElementById('form-gambar').value,
+                gambar: img1, // Main image for catalog
+                images: imagesArray.join(','), // Multiple images for slider
                 deskripsi: document.getElementById('form-deskripsi').value
             };
 
