@@ -543,7 +543,10 @@
                     <td class="px-6 py-4">
                         <span class="text-sm ${parseInt(p.stok) <= 5 ? 'text-red-600 font-bold' : 'text-gray-600'}">${p.stok}</span>
                     </td>
-                    <td class="px-6 py-4 text-right">
+                    <td class="px-6 py-4 text-right flex justify-end gap-2">
+                        <button onclick="openEditModal('${p.id}')" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        </button>
                         <button onclick="handleDelete('${p.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
@@ -559,7 +562,102 @@
             document.getElementById('product-modal').classList.remove('hidden');
         }
 
+        function openEditModal(id) {
+            const p = allProducts.find(prod => prod.id == id);
+            if (!p) return;
+
+            document.getElementById('modal-title').innerText = 'Edit Produk';
+            document.getElementById('product-id').value = p.id;
+            document.getElementById('form-nama').value = p.nama;
+            document.getElementById('form-harga').value = p.harga;
+            document.getElementById('form-stok').value = p.stok;
+            document.getElementById('form-category').value = p.kategori || '';
+            document.getElementById('form-deskripsi').value = p.deskripsi || '';
+            
+            const images = p.gambar ? p.gambar.split(',') : [];
+            document.getElementById('form-gambar-1').value = images[0] || '';
+            document.getElementById('form-gambar-2').value = images[1] || '';
+            document.getElementById('form-gambar-3').value = images[2] || '';
+
+            document.getElementById('product-modal').classList.remove('hidden');
+        }
+
         function closeModal() { document.getElementById('product-modal').classList.add('hidden'); }
+
+        document.getElementById('product-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('product-id').value;
+            const submitBtn = document.getElementById('submit-btn');
+            const originalText = submitBtn.innerText;
+            
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Menyimpan...';
+
+            const images = [
+                document.getElementById('form-gambar-1').value,
+                document.getElementById('form-gambar-2').value,
+                document.getElementById('form-gambar-3').value
+            ].filter(url => url.trim() !== '').join(',');
+
+            const data = {
+                nama: document.getElementById('form-nama').value,
+                harga: document.getElementById('form-harga').value,
+                stok: document.getElementById('form-stok').value,
+                kategori: document.getElementById('form-category').value,
+                deskripsi: document.getElementById('form-deskripsi').value,
+                gambar: images
+            };
+
+            try {
+                let response;
+                if (id) {
+                    // Update existing
+                    response = await fetch(`${API_URL}/id/${id}?sheet=${PRODUCTS_SHEET}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data: data })
+                    });
+                } else {
+                    // Create new
+                    const newId = Date.now().toString();
+                    response = await fetch(`${API_URL}?sheet=${PRODUCTS_SHEET}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data: { ...data, id: newId } })
+                    });
+                }
+
+                const result = await response.json();
+                if (result.affected > 0 || result.created > 0) {
+                    alert(id ? 'Produk berhasil diperbarui!' : 'Produk berhasil ditambahkan!');
+                    closeModal();
+                    fetchAdminProducts();
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Terjadi kesalahan saat menyimpan data.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalText;
+            }
+        });
+
+        async function handleDelete(id) {
+            if (!confirm('Apakah Anda yakin ingin menghapus produk ini?')) return;
+            try {
+                const response = await fetch(`${API_URL}/id/${id}?sheet=${PRODUCTS_SHEET}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                if (result.deleted > 0) {
+                    alert('Produk berhasil dihapus!');
+                    fetchAdminProducts();
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Gagal menghapus produk.');
+            }
+        }
 
         // Initialize
         showSection('dashboard');
