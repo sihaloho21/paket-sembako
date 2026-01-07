@@ -269,11 +269,24 @@ function showDetail(p) {
     const cashPriceEl = document.getElementById('modal-cash-price');
     const gajianPriceEl = document.getElementById('modal-gajian-price');
     const itemsListEl = document.getElementById('modal-items-list');
+    const badgesEl = document.getElementById('modal-badges');
+    const savingsHighlight = document.getElementById('savings-highlight');
+    const savingsAmount = document.getElementById('savings-amount');
 
     if (nameEl) nameEl.innerText = p.nama;
     if (cashPriceEl) cashPriceEl.innerText = `Rp ${p.harga.toLocaleString('id-ID')}`;
     if (gajianPriceEl) gajianPriceEl.innerText = `Rp ${p.hargaGajian.toLocaleString('id-ID')}`;
     
+    if (badgesEl) {
+        badgesEl.innerHTML = `<span class="bg-green-100 text-green-700 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wider">${p.category}</span>`;
+    }
+
+    if (savingsHighlight && savingsAmount) {
+        const savings = Math.round(p.harga * 0.15); // Example savings calculation
+        savingsAmount.innerText = `Rp ${savings.toLocaleString('id-ID')}`;
+        savingsHighlight.classList.remove('hidden');
+    }
+
     if (sliderEl) {
         const images = p.gambar ? p.gambar.split(',') : [];
         sliderEl.innerHTML = images.map(img => `
@@ -288,11 +301,12 @@ function showDetail(p) {
     }
 
     if (itemsListEl) {
-        const items = p.deskripsi.split('\n');
-        itemsListEl.innerHTML = items.map(item => `
-            <div class="flex items-center gap-2 text-sm text-gray-600">
-                <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                <span>${item.trim()}</span>
+        const items = p.deskripsi.split('\n').filter(i => i.trim() !== "");
+        const icons = ['🍜', '🍲', '📦', '☕', '🍚', '🍳', '🧂'];
+        itemsListEl.innerHTML = items.map((item, idx) => `
+            <div class="flex items-center gap-4 bg-gray-50/50 p-3 rounded-xl border border-gray-100/50">
+                <span class="text-xl">${icons[idx % icons.length]}</span>
+                <span class="text-sm font-medium text-gray-700">${item.trim()}</span>
             </div>
         `).join('');
     }

@@ -90,14 +90,27 @@
                 </div>
 
                 <div class="p-6 space-y-5">
-                    <!-- Header: Title -->
-                    <h3 id="modal-product-name" class="text-2xl font-bold text-gray-800 leading-tight">Rincian Produk</h3>
+                    <!-- Header: Category & Title -->
+                    <div class="space-y-2">
+                        <div id="modal-badges" class="flex flex-wrap gap-2">
+                            <!-- Category badge will be injected here -->
+                        </div>
+                        <h3 id="modal-product-name" class="text-2xl font-bold text-gray-800 leading-tight">Rincian Produk</h3>
+                    </div>
+
+                    <!-- Savings Highlight -->
+                    <div id="savings-highlight" class="hidden">
+                        <div class="bg-orange-50 border border-orange-100 text-orange-700 px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
+                            <svg class="w-4 h-4 animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <span>Hemat <span id="savings-amount" class="font-bold"></span> dibanding harga pasar</span>
+                        </div>
+                    </div>
 
                     <!-- Itemized List -->
                     <div class="space-y-3">
                         <h4 class="font-bold text-gray-700 flex items-center gap-2">
                             <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-                            Isi Paket:
+                            Deskripsi / Isi Paket:
                         </h4>
                         <div id="modal-items-list" class="grid grid-cols-1 gap-2">
                             <!-- Items with icons injected here -->
