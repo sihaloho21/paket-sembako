@@ -9,12 +9,25 @@
     <style>
         body { font-family: 'Poppins', sans-serif; }
     </style>
+    <script>
+        // Auth Check
+        if (localStorage.getItem('admin_logged_in') !== 'true') {
+            window.location.href = 'login.html';
+        }
+        function logout() {
+            localStorage.removeItem('admin_logged_in');
+            window.location.href = 'login.html';
+        }
+    </script>
 </head>
 <body class="bg-gray-50">
     <header class="bg-green-700 text-white py-6 shadow-md">
         <div class="container mx-auto px-4 flex justify-between items-center">
             <h1 class="text-2xl font-bold">Admin Panel</h1>
-            <a href="index.html" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-full text-sm font-semibold transition">Lihat Website</a>
+            <div class="flex gap-4 items-center">
+                <a href="../index.html" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-full text-sm font-semibold transition">Lihat Website</a>
+                <button onclick="logout()" class="bg-red-600 hover:bg-red-500 px-4 py-2 rounded-full text-sm font-semibold transition">Keluar</button>
+            </div>
         </div>
     </header>
 
@@ -27,8 +40,8 @@
             </button>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
-            <table class="w-full text-left">
+        <div class="bg-white rounded-2xl shadow-sm overflow-x-auto">
+            <table class="w-full text-left min-w-[800px]">
                 <thead class="bg-gray-50 border-b">
                     <tr>
                         <th class="px-6 py-4 text-sm font-bold text-gray-600">Produk</th>
@@ -47,7 +60,7 @@
 
     <!-- Add/Edit Modal -->
     <div id="product-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-8">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-8 max-h-[90vh] overflow-y-auto">
             <h3 id="modal-title" class="text-2xl font-bold text-gray-800 mb-6">Tambah Produk</h3>
             <form id="product-form" class="space-y-4">
                 <input type="hidden" id="product-id">
@@ -83,14 +96,14 @@
                 </div>
                 <div class="flex gap-3 pt-4">
                     <button type="button" onclick="closeModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition">Batal</button>
-                    <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition">Simpan</button>
+                    <button type="submit" id="submit-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition">Simpan</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        const API_URL = 'https://sheetdb.io/api/v1/637uvuabexalz';
+        const API_URL = 'https://sheetdb.io/api/v1/rga3iyvladqlc';
         let allProducts = [];
 
         async function fetchAdminProducts() {
@@ -98,9 +111,8 @@
             tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-gray-500">Memuat data...</td></tr>';
             
             try {
-                const response = await fetch(API_URL + '?action=read');
-                const result = await response.json();
-                allProducts = result.data || [];
+                const response = await fetch(API_URL);
+                allProducts = await response.json();
                 renderAdminTable();
             } catch (error) {
                 console.error('Error:', error);
@@ -123,7 +135,7 @@
                             <span class="font-bold text-gray-800">${p.nama}</span>
                         </div>
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-600">${p.category || '-'}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${p.kategori || '-'}</td>
                     <td class="px-6 py-4 font-bold text-green-700">Rp ${parseInt(p.harga).toLocaleString('id-ID')}</td>
                     <td class="px-6 py-4 text-sm text-gray-600">${p.stok}</td>
                     <td class="px-6 py-4">
@@ -153,7 +165,7 @@
             document.getElementById('form-nama').value = p.nama;
             document.getElementById('form-harga').value = p.harga;
             document.getElementById('form-stok').value = p.stok;
-            document.getElementById('form-category').value = p.category || 'Bahan Pokok';
+            document.getElementById('form-category').value = p.kategori || 'Bahan Pokok';
             document.getElementById('form-gambar').value = p.gambar;
             document.getElementById('form-deskripsi').value = p.deskripsi || '';
             document.getElementById('product-modal').classList.remove('hidden');
@@ -167,13 +179,14 @@
             if (!confirm('Yakin ingin menghapus produk ini?')) return;
             
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify({ action: 'delete', id: id })
+                const response = await fetch(`${API_URL}/id/${id}`, {
+                    method: 'DELETE'
                 });
-                alert('Permintaan hapus dikirim. Mohon tunggu beberapa saat lalu refresh.');
-                setTimeout(fetchAdminProducts, 2000);
+                const result = await response.json();
+                if (result.deleted) {
+                    alert('Produk berhasil dihapus!');
+                    fetchAdminProducts();
+                }
             } catch (error) {
                 console.error('Error:', error);
                 alert('Gagal menghapus produk.');
@@ -183,31 +196,50 @@
         document.getElementById('product-form').onsubmit = async (e) => {
             e.preventDefault();
             const id = document.getElementById('product-id').value;
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Menyimpan...';
+
             const data = {
+                id: id || Date.now().toString(),
                 nama: document.getElementById('form-nama').value,
                 harga: document.getElementById('form-harga').value,
                 stok: document.getElementById('form-stok').value,
-                category: document.getElementById('form-category').value,
+                kategori: document.getElementById('form-category').value,
                 gambar: document.getElementById('form-gambar').value,
                 deskripsi: document.getElementById('form-deskripsi').value
             };
 
-            const action = id ? 'update' : 'create';
-            const payload = { action, data };
-            if (id) payload.id = id;
-
             try {
-                await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify(payload)
-                });
-                alert('Data berhasil dikirim. Mohon tunggu beberapa saat lalu refresh.');
-                closeModal();
-                setTimeout(fetchAdminProducts, 2000);
+                let response;
+                if (id) {
+                    // Update
+                    response = await fetch(`${API_URL}/id/${id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data: data })
+                    });
+                } else {
+                    // Create
+                    response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data: [data] })
+                    });
+                }
+
+                const result = await response.json();
+                if (result.created || result.updated) {
+                    alert('Data berhasil disimpan!');
+                    closeModal();
+                    fetchAdminProducts();
+                }
             } catch (error) {
                 console.error('Error:', error);
                 alert('Gagal menyimpan data.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'Simpan';
             }
         };
 
