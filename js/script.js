@@ -405,16 +405,33 @@ function closeDetailModal() {
     document.body.classList.remove('modal-active');
 }
 
+let currentProductInModal = null;
+
+function showDetail(p) {
+    currentProductInModal = p;
+    const itemsList = document.getElementById('modal-items-list');
+...
+    document.getElementById('detail-modal').classList.remove('hidden');
+    document.body.classList.add('modal-active');
+}
+
 function directOrder(p) {
     cart = [{ ...p, qty: 1 }];
     saveCart();
     openOrderModal();
 }
 
+function directOrderFromModal() {
+    if (currentProductInModal) {
+        directOrder(currentProductInModal);
+    }
+}
+
 function openOrderModal() {
     if (cart.length === 0) return;
     
     closeCartModal();
+    closeDetailModal();
     document.getElementById('customer-name').value = "";
     document.getElementById('location-link').value = "";
     document.querySelectorAll('input[name="ship-method"]').forEach(r => r.checked = false);
@@ -456,12 +473,65 @@ function toggleLocationField() {
 
 function updateOrderTotal() {
     const total = cart.reduce((sum, item) => sum + item.harga * item.qty, 0);
-    document.getElementById('order-total').innerText = `Rp ${total.toLocaleString('id-ID')}`;
+    const totalEl = document.getElementById('order-final-total');
+    const stickyTotalEl = document.getElementById('sticky-order-total');
+    if (totalEl) totalEl.innerText = `Rp ${total.toLocaleString('id-ID')}`;
+    if (stickyTotalEl) stickyTotalEl.innerText = `Rp ${total.toLocaleString('id-ID')}`;
 }
 
 function closeOrderModal() {
     document.getElementById('order-modal').classList.add('hidden');
     document.body.classList.remove('modal-active');
+}
+
+function sendToWA() {
+    const name = document.getElementById('customer-name').value;
+    const shipMethod = document.querySelector('input[name="ship-method"]:checked')?.value;
+    const payMethod = document.querySelector('input[name="pay-method"]:checked')?.value;
+    const location = document.getElementById('location-link').value;
+
+    if (!name || !shipMethod || !payMethod) {
+        alert('Mohon lengkapi data pemesanan.');
+        return;
+    }
+
+    const total = cart.reduce((sum, item) => sum + item.harga * item.qty, 0);
+    const itemsText = cart.map(item => `- ${item.nama} (x${item.qty})`).join('\n');
+    
+    const message = `*PESANAN BARU - HARAPAN JAYA*\n\n` +
+                    `*Nama:* ${name}\n` +
+                    `*Metode:* ${shipMethod}\n` +
+                    `*Pembayaran:* ${payMethod}\n` +
+                    `*Lokasi:* ${location || '-'}\n\n` +
+                    `*Item:*\n${itemsText}\n\n` +
+                    `*Total Estimasi:* Rp ${total.toLocaleString('id-ID')}\n\n` +
+                    `Mohon segera diproses. Terima kasih!`;
+
+    const waUrl = `https://wa.me/628993370200?text=${encodeURIComponent(message)}`;
+    
+    // Log to SheetDB
+    fetch(`${API_URL}?sheet=orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            data: [{
+                id: 'ORD' + Date.now().toString().slice(-6),
+                pelanggan: name,
+                produk: itemsText,
+                qty: cart.reduce((sum, item) => sum + item.qty, 0),
+                total: total,
+                status: 'Menunggu',
+                tanggal: new Date().toISOString().split('T')[0]
+            }]
+        })
+    }).catch(e => console.error(e));
+
+    window.open(waUrl, '_blank');
+    cart = [];
+    saveCart();
+    updateCartUI();
+    closeOrderModal();
+    alert('Pesanan Anda telah diteruskan ke WhatsApp!');
 }
 
 async function submitOrder() {
