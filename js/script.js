@@ -44,8 +44,8 @@ async function fetchProducts() {
                 else if (cashPrice >= 50000) category = 'Paket Hemat';
             }
             
-            // Dummy descriptions if empty
-            const dummyDesc = "Beras Premium 5kg, Minyak Goreng 1L, Gula Pasir 1kg, Mie Instan 5 pcs, Teh Celup 1 box";
+            // Default description if empty
+            const defaultDesc = "Kualitas Terjamin, Stok Selalu Baru, Harga Kompetitif";
             
             return {
                 ...p,
@@ -53,7 +53,7 @@ async function fetchProducts() {
                 hargaGajian: gajianInfo.price,
                 stok: parseInt(p.stok) || 0,
                 category: category,
-                deskripsi: (p.deskripsi && p.deskripsi !== "Kualitas Terjamin,Stok Selalu Baru,Harga Kompetitif") ? p.deskripsi : dummyDesc
+                deskripsi: (p.deskripsi && p.deskripsi.trim() !== "") ? p.deskripsi : defaultDesc
             };
         });
         renderProducts(allProducts);
@@ -268,18 +268,32 @@ function showDetail(p) {
     document.getElementById('savings-amount').innerText = `Rp ${savings.toLocaleString('id-ID')}`;
     document.getElementById('savings-highlight').classList.remove('hidden');
 
-    // Items List
-    const items = p.deskripsi.split(',');
+    // Update Label to "Deskripsi / Isi Paket"
+    const detailTitle = document.querySelector('#detail-modal h4');
+    if (detailTitle) {
+        detailTitle.innerHTML = `
+            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+            Deskripsi / Isi Paket:
+        `;
+    }
+
+    // Items List (Split by comma or newline)
+    const items = p.deskripsi.split(/[,\n]/);
     const getIcon = (name) => {
-        if (name.includes('Beras')) return '🌾';
-        if (name.includes('Minyak')) return '🧪';
-        if (name.includes('Gula')) return '🍬';
-        if (name.includes('Mie')) return '🍜';
-        if (name.includes('Teh')) return '☕';
+        const n = name.toLowerCase();
+        if (n.includes('beras')) return '🌾';
+        if (n.includes('minyak')) return '🧪';
+        if (n.includes('gula')) return '🍬';
+        if (n.includes('mie')) return '🍜';
+        if (n.includes('teh')) return '☕';
+        if (n.includes('kopi')) return '☕';
+        if (n.includes('susu')) return '🥛';
+        if (n.includes('telur')) return '🥚';
         return '📦';
     };
 
     items.forEach(item => {
+        if (item.trim() === "") return;
         const div = document.createElement('div');
         div.className = 'flex items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100';
         div.innerHTML = `
@@ -514,7 +528,7 @@ function startNotificationLoop() {
     
     setInterval(() => {
         if (Math.random() > 0.7) {
-            const name = names[Math.floor(Math.random() * names.names.length)];
+            const name = names[Math.floor(Math.random() * names.length)];
             const product = products[Math.floor(Math.random() * products.length)];
             showNotification(`${name} baru saja membeli ${product}`);
         }
