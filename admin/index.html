@@ -103,7 +103,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://sheetdb.io/api/v1/rga3iyvladqlc';
+        const API_URL = 'https://sheetdb.io/api/v1/637uvuabexalz';
         let allProducts = [];
 
         async function fetchAdminProducts() {
@@ -229,10 +229,12 @@
                 }
 
                 const result = await response.json();
-                if (result.created || result.updated) {
+                if (result.created || result.updated || result.affected > 0) {
                     alert('Data berhasil disimpan!');
                     closeModal();
                     fetchAdminProducts();
+                } else {
+                    throw new Error(JSON.stringify(result));
                 }
             } catch (error) {
                 console.error('Error:', error);
