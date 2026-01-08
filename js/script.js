@@ -118,7 +118,7 @@ function renderProducts(products) {
                             <p class="text-lg font-bold text-blue-700">Rp ${p.hargaGajian.toLocaleString('id-ID')}</p>
                         </div>
                     </div>
-                    <button onclick='addToCart(${pData})' ${p.stok === 0 ? 'disabled' : ''} class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 mb-3">
+                    <button onclick='addToCart(${pData}, event)' ${p.stok === 0 ? 'disabled' : ''} class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 mb-3">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         Tambah ke Keranjang
                     </button>
@@ -152,7 +152,7 @@ function setCategory(cat) {
     filterProducts();
 }
 
-function addToCart(p) {
+function addToCart(p, event) {
     const existing = cart.find(item => item.nama === p.nama);
     if (existing) {
         existing.qty += 1;
@@ -162,11 +162,76 @@ function addToCart(p) {
     saveCart();
     updateCartUI();
     
-    const btn = document.querySelector('header button');
-    if (btn) {
-        btn.classList.add('cart-bounce');
-        setTimeout(() => btn.classList.remove('cart-bounce'), 500);
+    // Fly to cart animation
+    if (event && event.currentTarget) {
+        const btn = event.currentTarget;
+        const card = btn.closest('.bg-white') || document.getElementById('detail-modal');
+        const img = card.querySelector('img');
+        const cartBtn = document.querySelector('header button');
+        
+        if (img && cartBtn) {
+            const imgRect = img.getBoundingClientRect();
+            const cartRect = cartBtn.getBoundingClientRect();
+            
+            const flyImg = document.createElement('img');
+            flyImg.src = img.src;
+            flyImg.className = 'fly-item';
+            flyImg.style.top = `${imgRect.top}px`;
+            flyImg.style.left = `${imgRect.left}px`;
+            flyImg.style.width = `${imgRect.width}px`;
+            flyImg.style.height = `${imgRect.height}px`;
+            flyImg.style.borderRadius = '12px';
+            
+            document.body.appendChild(flyImg);
+            
+            // Trigger animation
+            requestAnimationFrame(() => {
+                flyImg.style.top = `${cartRect.top + cartRect.height / 2}px`;
+                flyImg.style.left = `${cartRect.left + cartRect.width / 2}px`;
+                flyImg.style.width = '20px';
+                flyImg.style.height = '20px';
+                flyImg.style.opacity = '0.5';
+                flyImg.style.borderRadius = '50%';
+            });
+            
+            setTimeout(() => {
+                flyImg.remove();
+                cartBtn.classList.add('cart-pop');
+                setTimeout(() => cartBtn.classList.remove('cart-pop'), 400);
+            }, 800);
+        }
+    } else {
+        // Fallback if no event (e.g. from modal)
+        const cartBtn = document.querySelector('header button');
+        if (cartBtn) {
+            cartBtn.classList.add('cart-pop');
+            setTimeout(() => cartBtn.classList.remove('cart-pop'), 400);
+        }
     }
+
+    // Show Toast
+    showToast(`${p.nama} ditambahkan ke keranjang`);
+}
+
+function showToast(message) {
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <span>${message}</span>
+    `;
+    
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
 }
 
 function saveCart() {
@@ -418,11 +483,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add event listener for detail modal add to cart button
     const modalAddCartBtn = document.getElementById('modal-add-cart');
     if (modalAddCartBtn) {
-        modalAddCartBtn.addEventListener('click', () => {
+        modalAddCartBtn.addEventListener('click', (event) => {
             const name = document.getElementById('modal-product-name').innerText;
             const product = allProducts.find(p => p.nama === name);
             if (product) {
-                addToCart(product);
+                addToCart(product, event);
                 closeDetailModal();
             }
         });
