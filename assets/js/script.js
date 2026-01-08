@@ -70,8 +70,15 @@ function renderProducts(products) {
         const images = p.gambar ? p.gambar.split(',') : [];
         const mainImage = images[0] || 'https://via.placeholder.com/300x200?text=Produk';
 
+        const rewardPoints = calculateRewardPoints(p.harga, p.category);
         grid.innerHTML += `
             <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition duration-300 relative">
+                <div class="absolute top-3 left-3 z-10">
+                    <div class="bg-amber-400 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-sm flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                        +${rewardPoints} Poin
+                    </div>
+                </div>
                 <img src="${mainImage}" alt="${p.nama}" class="w-full h-48 object-cover ${p.stok === 0 ? 'grayscale opacity-60' : ''}" onerror="this.src='https://via.placeholder.com/300x200?text=Produk'">
                 <div class="p-6">
                     <div class="flex justify-between items-start mb-2">
@@ -319,7 +326,14 @@ function showDetail(p) {
     if (gajianPriceEl) gajianPriceEl.innerText = `Rp ${p.hargaGajian.toLocaleString('id-ID')}`;
     
     if (badgesEl) {
-        badgesEl.innerHTML = `<span class="bg-green-100 text-green-700 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wider">${p.category}</span>`;
+        const rewardPoints = calculateRewardPoints(p.harga, p.category);
+        badgesEl.innerHTML = `
+            <span class="bg-green-100 text-green-700 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wider">${p.category}</span>
+            <span class="bg-amber-100 text-amber-700 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wider flex items-center gap-1">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                +${rewardPoints} Poin Reward
+            </span>
+        `;
     }
 
     if (savingsHighlight && savingsAmount) {
@@ -391,15 +405,35 @@ function openOrderModal() {
     const isGajian = payEl && payEl.value === 'Bayar Gajian';
     
     if (summaryEl) {
+        let totalPoints = 0;
         summaryEl.innerHTML = cart.map(item => {
             const price = isGajian ? item.hargaGajian : item.harga;
+            const itemPoints = calculateRewardPoints(price, item.category) * item.qty;
+            totalPoints += itemPoints;
             return `
-                <div class="flex justify-between">
-                    <span>${item.nama} (x${item.qty})</span>
-                    <span>Rp ${(price * item.qty).toLocaleString('id-ID')}</span>
+                <div class="flex justify-between items-center py-1">
+                    <div class="flex flex-col">
+                        <span class="font-medium">${item.nama} (x${item.qty})</span>
+                        <span class="text-[10px] text-amber-600 font-bold flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            +${itemPoints.toFixed(1)} Poin
+                        </span>
+                    </div>
+                    <span class="font-bold">Rp ${(price * item.qty).toLocaleString('id-ID')}</span>
                 </div>
             `;
         }).join('');
+        
+        // Add total points to summary
+        summaryEl.innerHTML += `
+            <div class="border-t border-dashed border-gray-200 mt-2 pt-2 flex justify-between items-center">
+                <span class="text-xs font-bold text-amber-700">Total Poin Didapat:</span>
+                <span class="text-sm font-black text-amber-700 flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                    ${totalPoints.toFixed(1)} Poin
+                </span>
+            </div>
+        `;
     }
     
     updateOrderTotal();
@@ -607,12 +641,15 @@ function sendToWA() {
     
     let itemDetails = "";
     let grandTotal = 0;
+    let totalPoints = 0;
 
     cart.forEach((item, index) => {
         const price = isGajian ? item.hargaGajian : item.harga;
         const subtotal = price * item.qty;
+        const itemPoints = calculateRewardPoints(price, item.category) * item.qty;
         grandTotal += subtotal;
-        itemDetails += `${index + 1}. ${item.nama} (x${item.qty})\n   Harga: Rp ${price.toLocaleString('id-ID')}\n   Subtotal: Rp ${subtotal.toLocaleString('id-ID')}\n`;
+        totalPoints += itemPoints;
+        itemDetails += `${index + 1}. ${item.nama} (x${item.qty})\n   Harga: Rp ${price.toLocaleString('id-ID')}\n   Subtotal: Rp ${subtotal.toLocaleString('id-ID')}\n   Poin: +${itemPoints.toFixed(1)}\n`;
     });
     
     let locationInfo = "";
@@ -631,6 +668,7 @@ ${locationInfo}
 ${itemDetails}
 ------------------------------------------
 *TOTAL BAYAR: Rp ${grandTotal.toLocaleString('id-ID')}*
+*POIN DIDAPAT: +${totalPoints.toFixed(1)} Poin*
 
 Mohon segera diproses, terima kasih!`;
 
@@ -644,8 +682,9 @@ Mohon segera diproses, terima kasih!`;
         produk: cart.map(item => `${item.nama} (x${item.qty})`).join(', '),
         qty: cart.reduce((sum, item) => sum + item.qty, 0),
         total: grandTotal,
+        poin: totalPoints.toFixed(1),
         status: 'Menunggu',
-        tanggal: new Date().toLocaleString('id-ID')
+        tanggal: dateStr
     };
 
     const submitBtn = document.querySelector('button[onclick="sendToWA()"]');
@@ -680,4 +719,67 @@ Mohon segera diproses, terima kasih!`;
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
     });
+}
+
+// ============ REWARD SYSTEM FUNCTIONS ============
+function openRewardModal() {
+    const modal = document.getElementById('reward-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        document.body.classList.add('modal-active');
+    }
+}
+
+function closeRewardModal() {
+    const modal = document.getElementById('reward-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.classList.remove('modal-active');
+    }
+}
+
+async function checkUserPoints() {
+    const phone = document.getElementById('reward-phone').value;
+    if (!phone) {
+        alert('Silakan masukkan nomor WhatsApp Anda.');
+        return;
+    }
+
+    const display = document.getElementById('points-display');
+    display.classList.remove('hidden');
+    display.innerHTML = `
+        <div class="flex items-center gap-3 py-2">
+            <div class="animate-spin rounded-full h-4 w-4 border-2 border-amber-500 border-t-transparent"></div>
+            <p class="text-xs text-amber-600">Mencari data...</p>
+        </div>
+    `;
+
+    try {
+        // For now, we simulate fetching from SheetDB
+        // In the next phase, we will implement the actual SheetDB fetch for 'orders' or 'users'
+        const API_URL = CONFIG.getAdminApiUrl();
+        const response = await fetch(`${API_URL}?sheet=orders&search=${phone}`);
+        const orders = await response.json();
+        
+        let totalPoints = 0;
+        if (Array.isArray(orders)) {
+            orders.forEach(order => {
+                // Simple logic: calculate points from each order's total
+                // This is a placeholder until we have a dedicated points sheet
+                const points = calculateRewardPoints(parseInt(order.total) || 0, 'Bahan Pokok');
+                totalPoints += points;
+            });
+        }
+
+        display.innerHTML = `
+            <p class="text-xs text-amber-600 font-medium">Total Poin Anda:</p>
+            <h4 class="text-3xl font-black text-amber-700">${totalPoints.toFixed(1)} <span class="text-sm font-bold">Poin</span></h4>
+            <p class="text-[10px] text-gray-400 mt-1 italic">*Poin dihitung dari riwayat pesanan Anda.</p>
+        `;
+    } catch (error) {
+        console.error('Error checking points:', error);
+        display.innerHTML = `
+            <p class="text-xs text-red-500 font-medium">Gagal mengambil data. Silakan coba lagi.</p>
+        `;
+    }
 }

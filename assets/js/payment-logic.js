@@ -67,6 +67,39 @@ function calculateGajianPrice(cashPrice) {
     };
 }
 
+/**
+ * Calculates reward points based on price and category.
+ * Rules:
+ * - 1 point = Rp 1,000
+ * - Min point = 0.1
+ * - Category "Paket" (Hemat/Lengkap) max = 10 points
+ * - Other categories max = 100 points
+ * @param {number} price - The price of the product.
+ * @param {string} category - The category of the product.
+ * @returns {number} - Calculated reward points.
+ */
+function calculateRewardPoints(price, category) {
+    let points = price / 1000;
+    
+    // Apply minimum
+    if (points < 0.1 && points > 0) points = 0.1;
+    
+    // Apply caps based on category
+    const isPaket = category && (category.toLowerCase().includes('paket'));
+    const cap = isPaket ? 10 : 100;
+    
+    if (points > cap) points = cap;
+    
+    // Round to 1 decimal place
+    return Math.round(points * 10) / 10;
+}
+
+// Exporting for use in other scripts
+if (typeof window !== 'undefined') {
+    window.calculateGajianPrice = calculateGajianPrice;
+    window.calculateRewardPoints = calculateRewardPoints;
+}
+
 // Exporting for use in other scripts (if using modules) or making it global
 if (typeof window !== 'undefined') {
     window.calculateGajianPrice = calculateGajianPrice;
