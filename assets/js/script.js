@@ -1,4 +1,4 @@
-const API_URL = 'https://sheetdb.io/api/v1/gxht1gj3on77z';
+let API_URL = CONFIG.getMainApiUrl();
 let cart = JSON.parse(localStorage.getItem('sembako_cart')) || [];
 let allProducts = [];
 let currentCategory = 'Semua';

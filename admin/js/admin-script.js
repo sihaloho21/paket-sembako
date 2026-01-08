@@ -9,7 +9,7 @@
         }
     
     
-        const API_URL = 'https://sheetdb.io/api/v1/637uvuabexalz';
+        let API_URL = CONFIG.getAdminApiUrl();
         const CATEGORIES_SHEET = 'categories';
         const PRODUCTS_SHEET = 'Sheet1';
         const ORDERS_SHEET = 'orders';
@@ -430,3 +430,88 @@
         // Initialize
         showSection('dashboard');
     
+        // ============ SETTINGS FUNCTIONS ============
+        function loadSettingsUI() {
+            // Load current API URLs from localStorage
+            const mainApiInput = document.getElementById('settings-main-api');
+            const adminApiInput = document.getElementById('settings-admin-api');
+            
+            if (mainApiInput) {
+                mainApiInput.value = CONFIG.getMainApiUrl();
+            }
+            if (adminApiInput) {
+                adminApiInput.value = CONFIG.getAdminApiUrl();
+            }
+        }
+
+        // Load settings when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSettingsUI();
+        });
+
+        // Handle settings save
+        const settingsSaveBtn = document.querySelector('button:has(svg path[d*="M8 7H5"])');
+        if (settingsSaveBtn) {
+            settingsSaveBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                saveSettings();
+            });
+        }
+
+        function saveSettings() {
+            const mainApiInput = document.getElementById('settings-main-api');
+            const adminApiInput = document.getElementById('settings-admin-api');
+            
+            const mainApiUrl = mainApiInput ? mainApiInput.value : '';
+            const adminApiUrl = adminApiInput ? adminApiInput.value : '';
+            
+            let hasError = false;
+            let errorMessages = [];
+
+            // Validate URLs
+            if (mainApiUrl && !isValidUrl(mainApiUrl)) {
+                hasError = true;
+                errorMessages.push('URL API Utama tidak valid');
+            }
+            if (adminApiUrl && !isValidUrl(adminApiUrl)) {
+                hasError = true;
+                errorMessages.push('URL API Admin tidak valid');
+            }
+
+            if (hasError) {
+                alert('Error:\n' + errorMessages.join('\n'));
+                return;
+            }
+
+            // Save to localStorage
+            if (mainApiUrl) CONFIG.setMainApiUrl(mainApiUrl);
+            if (adminApiUrl) CONFIG.setAdminApiUrl(adminApiUrl);
+
+            // Update global API_URL variable
+            API_URL = CONFIG.getAdminApiUrl();
+
+            alert('✓ Pengaturan berhasil disimpan!\n\nPerubahan akan berlaku pada halaman berikutnya.');
+            
+            // Optional: Reload data with new API
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        }
+
+        function isValidUrl(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function resetSettingsToDefault() {
+            if (confirm('Apakah Anda yakin ingin mereset semua pengaturan ke nilai default?')) {
+                CONFIG.resetToDefault('main');
+                CONFIG.resetToDefault('admin');
+                alert('✓ Pengaturan telah direset ke default!');
+                location.reload();
+            }
+        }
