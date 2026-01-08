@@ -3,31 +3,7 @@ let cart = JSON.parse(localStorage.getItem('sembako_cart')) || [];
 let allProducts = [];
 let currentCategory = 'Semua';
 
-function calculateGajianPrice(cashPrice) {
-    const now = new Date();
-    const wibOffset = 7 * 60 * 60 * 1000;
-    const nowWIB = new Date(now.getTime() + wibOffset);
-    let targetDate = new Date(nowWIB.getFullYear(), nowWIB.getMonth(), 7);
-    if (nowWIB.getDate() > 7) targetDate.setMonth(targetDate.getMonth() + 1);
-    const diffTime = targetDate - nowWIB;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    let markup = 0.25;
-    if (diffDays <= 2) markup = 0.01;
-    else if (diffDays <= 3) markup = 0.03;
-    else if (diffDays <= 4) markup = 0.04;
-    else if (diffDays <= 5) markup = 0.05;
-    else if (diffDays <= 7) markup = 0.06;
-    else if (diffDays <= 10) markup = 0.07;
-    else if (diffDays <= 15) markup = 0.10;
-    else if (diffDays <= 20) markup = 0.15;
-    else if (diffDays <= 29) markup = 0.20;
-    return {
-        price: Math.round(cashPrice * (1 + markup)),
-        daysLeft: diffDays,
-        markupPercent: (markup * 100).toFixed(0)
-    };
-}
+// calculateGajianPrice is now handled in assets/js/payment-logic.js
 
 async function fetchProducts() {
     try {
