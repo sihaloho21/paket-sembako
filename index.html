@@ -200,22 +200,16 @@
                     <div class="border-t mt-3 pt-3 flex justify-between items-center">
                         <span class="font-bold text-gray-800">Total Bayar:</span>
                         <span id="order-final-total" class="text-lg font-bold text-green-700">Rp 0</span>
+                                       <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-gray-700">Nama Lengkap</label>
+                            <input type="text" id="customer-name" placeholder="Nama Anda" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-green-500 outline-none transition text-sm">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-gray-700">No. WhatsApp</label>
+                            <input type="tel" id="customer-phone" placeholder="0812..." onblur="this.value = normalizePhone(this.value)" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-green-500 outline-none transition text-sm">
+                        </div>
                     </div>
-                </div>
-
-                <!-- Form Data -->
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Nama Lengkap</label>
-                        <input type="text" id="customer-name" placeholder="Masukkan nama Anda" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-green-500 outline-none transition">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Nomor WhatsApp</label>
-                        <input type="tel" id="customer-phone" placeholder="Contoh: 08123456789" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-green-500 outline-none transition">
-                    </div>
-
-                    <div>
                         <label class="block text-sm font-bold text-gray-700 mb-3">Metode Pengiriman</label>
                         <div class="grid grid-cols-1 gap-3">
                             <label class="radio-card relative cursor-pointer">
@@ -379,7 +373,7 @@
                 <div class="bg-amber-50 p-5 rounded-2xl border border-amber-100">
                     <label class="block text-sm font-bold text-amber-800 mb-2">Cek Poin Saya</label>
                     <div class="flex gap-2">
-                        <input type="tel" id="reward-phone" placeholder="Masukkan No. WhatsApp" class="flex-1 p-3 bg-white border border-amber-200 rounded-xl focus:border-amber-500 outline-none transition text-sm">
+                        <input type="tel" id="reward-phone" placeholder="Masukkan No. WhatsApp" onblur="this.value = normalizePhone(this.value)" class="flex-1 p-3 bg-white border border-amber-200 rounded-xl focus:border-amber-500 outline-none transition text-sm">
                         <button onclick="checkUserPoints()" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl font-bold text-sm transition">Cek</button>
                     </div>
                     <div id="points-display" class="mt-4 hidden">

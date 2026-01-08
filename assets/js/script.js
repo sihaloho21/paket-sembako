@@ -408,7 +408,8 @@ function openOrderModal() {
         let totalPoints = 0;
         summaryEl.innerHTML = cart.map(item => {
             const price = isGajian ? item.hargaGajian : item.harga;
-            const itemPoints = calculateRewardPoints(price, item.category) * item.qty;
+            // Points are always calculated based on the base cash price for fairness
+            const itemPoints = calculateRewardPoints(item.harga, item.category) * item.qty;
             totalPoints += itemPoints;
             return `
                 <div class="flex justify-between items-center py-1">
@@ -595,7 +596,8 @@ function updateOrderTotal() {
         let totalPoints = 0;
         summaryEl.innerHTML = cart.map(item => {
             const price = isGajian ? item.hargaGajian : item.harga;
-            const itemPoints = calculateRewardPoints(price, item.category) * item.qty;
+            // Points are always calculated based on the base cash price for fairness
+            const itemPoints = calculateRewardPoints(item.harga, item.category) * item.qty;
             totalPoints += itemPoints;
             return `
                 <div class="flex justify-between items-center py-1">
@@ -666,7 +668,8 @@ function sendToWA() {
     cart.forEach((item, index) => {
         const price = isGajian ? item.hargaGajian : item.harga;
         const subtotal = price * item.qty;
-        const itemPoints = calculateRewardPoints(price, item.category) * item.qty;
+        // Points are always calculated based on the base cash price for fairness
+        const itemPoints = calculateRewardPoints(item.harga, item.category) * item.qty;
         grandTotal += subtotal;
         totalPoints += itemPoints;
         itemDetails += `${index + 1}. ${item.nama} (x${item.qty})\n   Harga: Rp ${price.toLocaleString('id-ID')}\n   Subtotal: Rp ${subtotal.toLocaleString('id-ID')}\n   Poin: +${itemPoints.toFixed(1)}\n`;
@@ -711,9 +714,11 @@ Mohon segera diproses, terima kasih!`;
     };
 
     const submitBtn = document.querySelector('button[onclick="sendToWA()"]');
-    const originalBtnText = submitBtn.innerHTML;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span>⌛ Memproses Pesanan...</span>';
+    const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span>⌛ Memproses Pesanan...</span>';
+    }
 
     fetch(`${API_URL}?sheet=orders`, {
         method: 'POST',
@@ -745,11 +750,27 @@ Mohon segera diproses, terima kasih!`;
 }
 
 // ============ REWARD SYSTEM FUNCTIONS ============
+function normalizePhone(phone) {
+    if (!phone) return '';
+    let p = phone.replace(/[^0-9]/g, '');
+    if (p.startsWith('0')) p = '62' + p.slice(1);
+    if (p.startsWith('8')) p = '62' + p;
+    return p;
+}
+
 function openRewardModal() {
     const modal = document.getElementById('reward-modal');
     if (modal) {
         modal.classList.remove('hidden');
         document.body.classList.add('modal-active');
+        
+        // Auto-fill phone if available in order form
+        const orderPhone = document.getElementById('customer-phone');
+        const rewardPhone = document.getElementById('reward-phone');
+        if (orderPhone && rewardPhone && orderPhone.value && !rewardPhone.value) {
+            rewardPhone.value = orderPhone.value;
+        }
+        
         fetchRewardItems();
     }
 }
@@ -795,7 +816,7 @@ async function fetchRewardItems() {
                         <p class="text-amber-600 font-bold text-xs">${cost} Poin</p>
                     </div>
                     <button 
-                        onclick="claimReward('${item.nama}', ${cost})" 
+                        onclick="claimReward('${item.nama}', ${cost}, event)" 
                         ${!canClaim ? 'disabled' : ''}
                         class="px-4 py-2 rounded-lg font-bold text-xs transition ${canClaim ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}"
                     >
@@ -837,13 +858,10 @@ async function checkUserPoints() {
         
         // Filter orders by phone (using a simple check since SheetDB search might be limited)
         // In a real scenario, we'd use SheetDB's search feature more effectively
+        const normalizedSearchPhone = normalizePhone(phone);
         const userOrders = allOrders.filter(o => {
-            // Check if phone matches (handling potential formatting differences)
-            const orderPhone = o.phone || ''; // Assuming there might be a phone column, or we check customer name if it contains phone
-            // Based on previous analysis, we don't see a 'phone' column in orders, 
-            // but the prompt says "filtered by their WhatsApp number". 
-            // Let's assume we need to check a 'phone' column or similar.
-            return o.phone === phone || o.pelanggan.includes(phone);
+            const orderPhone = normalizePhone(o.phone || '');
+            return orderPhone === normalizedSearchPhone || (o.pelanggan && o.pelanggan.includes(phone));
         });
         
         let earnedPoints = userOrders.reduce((sum, o) => sum + (parseFloat(o.poin) || 0), 0);
@@ -854,7 +872,8 @@ async function checkUserPoints() {
             const claimsResponse = await fetch(`${API_URL}?sheet=claims`);
             if (claimsResponse.ok) {
                 const allClaims = await claimsResponse.json();
-                const userClaims = allClaims.filter(c => c.phone === phone && c.status !== 'Dibatalkan');
+                const normalizedSearchPhone = normalizePhone(phone);
+                const userClaims = allClaims.filter(c => normalizePhone(c.phone) === normalizedSearchPhone && c.status !== 'Dibatalkan');
                 usedPoints = userClaims.reduce((sum, c) => sum + (parseFloat(c.poin) || 0), 0);
             }
         } catch (e) {
@@ -879,7 +898,7 @@ async function checkUserPoints() {
     }
 }
 
-function claimReward(rewardName, pointCost) {
+async function claimReward(rewardName, pointCost, event) {
     if (userPointsBalance < pointCost) {
         alert('Poin Anda tidak mencukupi untuk menukarkan hadiah ini.');
         return;
@@ -900,7 +919,7 @@ Mohon diproses penukarannya, terima kasih!`;
 
     const waUrl = `https://wa.me/628993370200?text=${encodeURIComponent(message)}`;
     
-    // Optional: Record claim to SheetDB
+    // Record claim to SheetDB
     const API_URL = CONFIG.getAdminApiUrl();
     const claimData = {
         id: 'CLM-' + Date.now().toString().slice(-6),
@@ -912,20 +931,39 @@ Mohon diproses penukarannya, terima kasih!`;
         tanggal: new Date().toLocaleString('id-ID')
     };
 
-    fetch(`${API_URL}?sheet=claims`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: claimData })
-    }).catch(err => console.error('Error recording claim:', err));
+    // Show loading state on the button
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '...';
 
-    window.open(waUrl, '_blank');
-    showToast(`Permintaan klaim ${rewardName} telah dikirim!`);
-    
-    // Update local balance and UI
-    userPointsBalance -= pointCost;
-    const display = document.getElementById('points-display');
-    if (display) {
-        display.querySelector('h4').innerHTML = `${userPointsBalance.toFixed(1)} <span class="text-sm font-bold">Poin</span>`;
+    try {
+        const response = await fetch(`${API_URL}?sheet=claims`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: claimData })
+        });
+
+        if (response.ok) {
+            window.open(waUrl, '_blank');
+            showToast(`Permintaan klaim ${rewardName} telah dikirim!`);
+            
+            // Update local balance and UI
+            userPointsBalance -= pointCost;
+            const display = document.getElementById('points-display');
+            if (display) {
+                const h4 = display.querySelector('h4');
+                if (h4) h4.innerHTML = `${userPointsBalance.toFixed(1)} <span class="text-sm font-bold">Poin</span>`;
+            }
+            fetchRewardItems();
+        } else {
+            throw new Error('Gagal mengirim data klaim');
+        }
+    } catch (err) {
+        console.error('Error recording claim:', err);
+        alert('Gagal memproses klaim. Silakan periksa koneksi internet Anda.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
     }
-    fetchRewardItems();
 }
