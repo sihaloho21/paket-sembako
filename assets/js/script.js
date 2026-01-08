@@ -592,15 +592,35 @@ function updateOrderTotal() {
     // Also update summary if modal is open
     const summaryEl = document.getElementById('order-summary');
     if (summaryEl && document.getElementById('order-modal').classList.contains('hidden') === false) {
+        let totalPoints = 0;
         summaryEl.innerHTML = cart.map(item => {
             const price = isGajian ? item.hargaGajian : item.harga;
+            const itemPoints = calculateRewardPoints(price, item.category) * item.qty;
+            totalPoints += itemPoints;
             return `
-                <div class="flex justify-between">
-                    <span>${item.nama} (x${item.qty})</span>
-                    <span>Rp ${(price * item.qty).toLocaleString('id-ID')}</span>
+                <div class="flex justify-between items-center py-1">
+                    <div class="flex flex-col">
+                        <span class="font-medium">${item.nama} (x${item.qty})</span>
+                        <span class="text-[10px] text-amber-600 font-bold flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            +${itemPoints.toFixed(1)} Poin
+                        </span>
+                    </div>
+                    <span class="font-bold">Rp ${(price * item.qty).toLocaleString('id-ID')}</span>
                 </div>
             `;
         }).join('');
+
+        // Add total points to summary
+        summaryEl.innerHTML += `
+            <div class="border-t border-dashed border-gray-200 mt-2 pt-2 flex justify-between items-center">
+                <span class="text-xs font-bold text-amber-700">Total Poin Didapat:</span>
+                <span class="text-sm font-black text-amber-700 flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                    ${totalPoints.toFixed(1)} Poin
+                </span>
+            </div>
+        `;
     }
 }
 
