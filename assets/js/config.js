@@ -14,7 +14,8 @@ const CONFIG = {
     // Storage keys
     STORAGE_KEYS: {
         MAIN_API: 'sembako_main_api_url',
-        ADMIN_API: 'sembako_admin_api_url'
+        ADMIN_API: 'sembako_admin_api_url',
+        GAJIAN_CONFIG: 'sembako_gajian_config'
     },
     
     /**
@@ -70,13 +71,53 @@ const CONFIG = {
     },
     
     /**
+     * Mendapatkan konfigurasi Bayar Gajian
+     * @returns {object} Konfigurasi gajian
+     */
+    getGajianConfig() {
+        const saved = localStorage.getItem(this.STORAGE_KEYS.GAJIAN_CONFIG);
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error('Error parsing gajian config', e);
+            }
+        }
+        return {
+            targetDay: 7,
+            markups: [
+                { minDays: 29, rate: 0.20 },
+                { minDays: 26, rate: 0.18 },
+                { minDays: 23, rate: 0.16 },
+                { minDays: 20, rate: 0.14 },
+                { minDays: 17, rate: 0.12 },
+                { minDays: 14, rate: 0.10 },
+                { minDays: 11, rate: 0.08 },
+                { minDays: 8, rate: 0.06 },
+                { minDays: 3, rate: 0.04 },
+                { minDays: 0, rate: 0.02 }
+            ],
+            defaultMarkup: 0.25
+        };
+    },
+
+    /**
+     * Menyimpan konfigurasi Bayar Gajian
+     * @param {object} config - Konfigurasi baru
+     */
+    setGajianConfig(config) {
+        localStorage.setItem(this.STORAGE_KEYS.GAJIAN_CONFIG, JSON.stringify(config));
+    },
+
+    /**
      * Mendapatkan semua konfigurasi saat ini
      * @returns {object} Objek berisi semua konfigurasi
      */
     getAllConfig() {
         return {
             mainApi: this.getMainApiUrl(),
-            adminApi: this.getAdminApiUrl()
+            adminApi: this.getAdminApiUrl(),
+            gajian: this.getGajianConfig()
         };
     }
 };

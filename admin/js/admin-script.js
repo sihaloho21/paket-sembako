@@ -444,10 +444,65 @@
             }
         }
 
+        // ============ GAJIAN CONFIG FUNCTIONS ============
+        function loadGajianConfigUI() {
+            const config = CONFIG.getGajianConfig();
+            const targetDayInput = document.getElementById('gajian-target-day');
+            if (targetDayInput) targetDayInput.value = config.targetDay;
+            const defaultMarkupInput = document.getElementById('gajian-default-markup');
+            if (defaultMarkupInput) defaultMarkupInput.value = Math.round(config.defaultMarkup * 100);
+            renderGajianMarkupsTable(config.markups);
+        }
+        
+        function renderGajianMarkupsTable(markups) {
+            const tbody = document.getElementById('gajian-markups-table');
+            if (!tbody) return;
+            const sorted = [...markups].sort((a, b) => b.minDays - a.minDays);
+            tbody.innerHTML = sorted.map((markup, index) => `
+                <tr class="border-b border-gray-100 hover:bg-gray-50">
+                    <td class="py-3 px-2 font-medium text-gray-800">≥ ${markup.minDays}</td>
+                    <td class="py-3 px-2 text-gray-600">${Math.round(markup.rate * 100)}%</td>
+                    <td class="py-3 px-2">
+                        <button type="button" onclick="openEditMarkupModal(${index})" class="text-blue-600 hover:text-blue-800 font-medium text-sm">Edit</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        function openEditMarkupModal(index) {
+            const config = CONFIG.getGajianConfig();
+            const markup = config.markups[index];
+            document.getElementById('edit-markup-index').value = index;
+            document.getElementById('edit-markup-min-days').value = markup.minDays;
+            document.getElementById('edit-markup-rate').value = Math.round(markup.rate * 100);
+            document.getElementById('edit-markup-modal').classList.remove('hidden');
+        }
+        
+        function closeEditMarkupModal() {
+            document.getElementById('edit-markup-modal').classList.add('hidden');
+        }
+
         // Load settings when page loads
         document.addEventListener('DOMContentLoaded', function() {
             loadSettingsUI();
+            loadGajianConfigUI();
         });
+
+        const editMarkupForm = document.getElementById('edit-markup-form');
+        if (editMarkupForm) {
+            editMarkupForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const index = parseInt(document.getElementById('edit-markup-index').value);
+                const minDays = parseInt(document.getElementById('edit-markup-min-days').value);
+                const rate = parseInt(document.getElementById('edit-markup-rate').value) / 100;
+                const config = CONFIG.getGajianConfig();
+                config.markups[index] = { minDays, rate };
+                CONFIG.setGajianConfig(config);
+                renderGajianMarkupsTable(config.markups);
+                closeEditMarkupModal();
+                alert('Persentase markup berhasil diperbarui!');
+            });
+        }
 
         // Handle settings save
         const settingsSaveBtn = document.querySelector('button:has(svg path[d*="M8 7H5"])');
@@ -461,9 +516,13 @@
         function saveSettings() {
             const mainApiInput = document.getElementById('settings-main-api');
             const adminApiInput = document.getElementById('settings-admin-api');
+            const targetDayInput = document.getElementById('gajian-target-day');
+            const defaultMarkupInput = document.getElementById('gajian-default-markup');
             
             const mainApiUrl = mainApiInput ? mainApiInput.value : '';
             const adminApiUrl = adminApiInput ? adminApiInput.value : '';
+            const targetDay = targetDayInput ? parseInt(targetDayInput.value) : 7;
+            const defaultMarkup = defaultMarkupInput ? parseInt(defaultMarkupInput.value) / 100 : 0.25;
             
             let hasError = false;
             let errorMessages = [];
@@ -477,15 +536,31 @@
                 hasError = true;
                 errorMessages.push('URL API Admin tidak valid');
             }
+            
+            // Validate Gajian config
+            if (targetDay < 1 || targetDay > 31) {
+                hasError = true;
+                errorMessages.push('Tanggal gajian harus antara 1-31');
+            }
+            if (defaultMarkup < 0 || defaultMarkup > 1) {
+                hasError = true;
+                errorMessages.push('Markup default harus antara 0-100%');
+            }
 
             if (hasError) {
                 alert('Error:\n' + errorMessages.join('\n'));
                 return;
             }
 
-            // Save to localStorage
+            // Save API settings to localStorage
             if (mainApiUrl) CONFIG.setMainApiUrl(mainApiUrl);
             if (adminApiUrl) CONFIG.setAdminApiUrl(adminApiUrl);
+            
+            // Save Gajian config
+            const config = CONFIG.getGajianConfig();
+            config.targetDay = targetDay;
+            config.defaultMarkup = defaultMarkup;
+            CONFIG.setGajianConfig(config);
 
             // Update global API_URL variable
             API_URL = CONFIG.getAdminApiUrl();
