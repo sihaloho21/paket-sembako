@@ -146,8 +146,19 @@
                     <div class="px-8 py-6 border-b border-gray-100">
                         <h4 class="font-bold text-gray-800">Daftar Kategori <span id="category-count" class="text-gray-500">(0)</span></h4>
                     </div>
-                    <div id="category-list" class="divide-y divide-gray-100">
-                        <!-- Categories will be loaded here -->
+                    <div id="category-list" class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-gray-50 border-b">
+                                <tr>
+                                    <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Nama Kategori</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Deskripsi</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="category-list-body" class="divide-y divide-gray-100">
+                                <!-- Categories will be loaded here -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>
@@ -381,13 +392,13 @@
                             
                             <div>
                                 <label class="block text-xs font-bold text-blue-600 mb-2 uppercase">API Endpoint Halaman Utama</label>
-                                <input type="text" id="settings-main-api" value="https://sheetdb.io/api/v1/gxht1gj3on77z" class="w-full p-3 border border-blue-200 rounded-xl outline-none focus:border-blue-500 bg-white text-sm font-mono">
+                                <input type="text" id="settings-main-api" value="https://sheetdb.io/api/v1/ollu7q79t1lc8" class="w-full p-3 border border-blue-200 rounded-xl outline-none focus:border-blue-500 bg-white text-sm font-mono">
                                 <p class="text-[10px] text-blue-500 mt-1">Digunakan untuk menampilkan produk di halaman utama</p>
                             </div>
                             
                             <div>
                                 <label class="block text-xs font-bold text-blue-600 mb-2 uppercase">API Endpoint Admin Dashboard</label>
-                                <input type="text" id="settings-admin-api" value="https://sheetdb.io/api/v1/637uvuabexalz" class="w-full p-3 border border-blue-200 rounded-xl outline-none focus:border-blue-500 bg-white text-sm font-mono">
+                                <input type="text" id="settings-admin-api" value="https://sheetdb.io/api/v1/ollu7q79t1lc8" class="w-full p-3 border border-blue-200 rounded-xl outline-none focus:border-blue-500 bg-white text-sm font-mono">
                                 <p class="text-[10px] text-blue-500 mt-1">Digunakan untuk mengelola produk, kategori, dan pesanan di admin</p>
                             </div>
                             

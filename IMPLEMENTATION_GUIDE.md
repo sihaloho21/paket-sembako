@@ -26,7 +26,7 @@ Add some sample products to test the feature:
 
 1. Your SheetDB API should already be configured in the admin panel
 2. The API URL is stored in `CONFIG.getAdminApiUrl()`
-3. Default: `https://sheetdb.io/api/v1/637uvuabexalz`
+3. Default: `https://sheetdb.io/api/v1/ollu7q79t1lc8`
 
 ### Step 4: Test the Feature
 
