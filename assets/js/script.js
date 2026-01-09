@@ -792,7 +792,8 @@ async function fetchRewardItems() {
 
     try {
         const API_URL = CONFIG.getMainApiUrl();
-        const response = await fetch(`${API_URL}?sheet=rewards`);
+        // Use 'tukar_poin' sheet as configured in admin
+        const response = await fetch(`${API_URL}?sheet=tukar_poin`);
         const rewards = await response.json();
 
         if (!Array.isArray(rewards) || rewards.length === 0) {
@@ -807,16 +808,17 @@ async function fetchRewardItems() {
         container.innerHTML = rewards.map(item => {
             const cost = parseInt(item.poin) || 0;
             const canClaim = userPointsBalance >= cost && userPhoneForReward !== '';
+            const title = item.judul || item.nama; // Support both 'judul' (new) and 'nama' (old)
             
             return `
                 <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
-                    <img src="${item.gambar || 'https://via.placeholder.com/60?text=Gift'}" alt="${item.nama}" class="w-16 h-16 object-cover rounded-lg bg-gray-50">
+                    <img src="${item.gambar || 'https://via.placeholder.com/60?text=Gift'}" alt="${title}" class="w-16 h-16 object-cover rounded-lg bg-gray-50">
                     <div class="flex-1">
-                        <h5 class="font-bold text-gray-800 text-sm">${item.nama}</h5>
+                        <h5 class="font-bold text-gray-800 text-sm">${title}</h5>
                         <p class="text-amber-600 font-bold text-xs">${cost} Poin</p>
                     </div>
                     <button 
-                        onclick="claimReward('${item.nama}', ${cost}, event)" 
+                        onclick="claimReward('${title}', ${cost}, event)" 
                         ${!canClaim ? 'disabled' : ''}
                         class="px-4 py-2 rounded-lg font-bold text-xs transition ${canClaim ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}"
                     >
