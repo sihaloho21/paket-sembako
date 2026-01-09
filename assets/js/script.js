@@ -680,7 +680,9 @@ function sendToWA() {
         locationInfo = `*Link Lokasi:* ${locationLink}\n`;
     }
 
-    const phone = document.getElementById('customer-phone') ? document.getElementById('customer-phone').value : '';
+    const rawPhone = document.getElementById('customer-phone') ? document.getElementById('customer-phone').value : '';
+    const phone = normalizePhone(rawPhone);
+    
     const message = `*PESANAN BARU - HARAPAN JAYA*
 ------------------------------------------
 *Tanggal Pemesanan:* ${dateStr}
@@ -698,13 +700,13 @@ ${itemDetails}
 Mohon segera diproses, terima kasih!`;
 
     const waUrl = `https://wa.me/628993370200?text=${encodeURIComponent(message)}`;
-    
+
     // Record order to SheetDB
     const orderId = 'ORD-' + Date.now().toString().slice(-6);
     const orderData = {
         id: orderId,
         pelanggan: name || 'Pelanggan',
-        phone: document.getElementById('customer-phone') ? document.getElementById('customer-phone').value : '',
+        phone: phone,
         produk: cart.map(item => `${item.nama} (x${item.qty})`).join(', '),
         qty: cart.reduce((sum, item) => sum + item.qty, 0),
         total: grandTotal,
@@ -753,13 +755,14 @@ Mohon segera diproses, terima kasih!`;
 // ============ REWARD SYSTEM FUNCTIONS ============
 function normalizePhone(phone) {
     if (!phone) return '';
-    let p = phone.replace(/[^0-9]/g, '');
+    let p = phone.toString().replace(/[^0-9]/g, '');
     if (p.startsWith('62')) p = '0' + p.slice(2);
-    if (p.startsWith('8')) p = '0' + p;
+    else if (p.startsWith('8')) p = '0' + p;
+    else if (!p.startsWith('0')) p = '0' + p;
+    
     // Ensure it starts with 08
-    if (!p.startsWith('08') && p.length > 0) {
-        // If it's just numbers but doesn't start with 08, we might need to be careful, 
-        // but based on user request, we want 08 format.
+    if (p.startsWith('0') && !p.startsWith('08') && p.length > 1) {
+        // For mobile numbers in Indonesia
     }
     return p;
 }

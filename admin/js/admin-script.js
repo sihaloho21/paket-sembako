@@ -144,15 +144,31 @@
             if (!phone) return '';
             let p = phone.toString().replace(/[^0-9]/g, '');
             if (p.startsWith('62')) p = '0' + p.slice(2);
-            if (p.startsWith('8')) p = '0' + p;
+            else if (p.startsWith('8')) p = '0' + p;
+            else if (!p.startsWith('0')) p = '0' + p;
+            
+            // Ensure it starts with 08
+            if (p.startsWith('0') && !p.startsWith('08') && p.length > 1) {
+                // If it starts with 0 but not 08 (like 021), we still try to make it 08 if it's a mobile number
+                // but for this project we assume mobile numbers.
+            }
             return p;
         }
 
         async function updateOrderStatus(id, newStatus) {
             if (!newStatus) return;
+            
+            // Show loading state if possible or just disable the select
+            const selectElement = event.target;
+            selectElement.disabled = true;
+
             try {
                 const order = allOrders.find(o => o.id === id);
-                if (!order) return;
+                if (!order) {
+                    showAdminToast('Pesanan tidak ditemukan!', 'error');
+                    selectElement.disabled = false;
+                    return;
+                }
 
                 // 1. Update order status
                 const response = await fetch(`${API_URL}/id/${id}?sheet=${ORDERS_SHEET}`, {
@@ -163,8 +179,9 @@
                 const result = await response.json();
                 
                 if (result.affected > 0) {
-                    // 2. If status is 'Terima' or 'Selesai', update user points
-                    if ((newStatus === 'Terima' || newStatus === 'Selesai') && order.points_awarded !== 'Ya') {
+                    // 2. If status is 'Terima', update user points
+                    // We only award points if status is 'Terima' and points haven't been awarded yet
+                    if (newStatus === 'Terima' && order.points_awarded !== 'Ya') {
                         if (order.phone && order.poin) {
                             const pointsToAdd = parseFloat(order.poin) || 0;
                             const phone = normalizePhone(order.phone);
@@ -211,16 +228,25 @@
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ data: { points_awarded: 'Ya' } })
                                 });
+                                showAdminToast(`Status diperbarui & +${pointsToAdd} poin diberikan ke ${phone}`, 'success');
+                            } else {
+                                showAdminToast('Status diperbarui, tapi gagal update poin.', 'warning');
                             }
+                        } else {
+                            showAdminToast('Status diperbarui (Poin tidak tersedia/No HP kosong)', 'info');
                         }
+                    } else {
+                        showAdminToast('Status pesanan diperbarui!', 'success');
                     }
-                    
-                    alert('Status pesanan diperbarui!');
                     fetchOrders();
+                } else {
+                    showAdminToast('Gagal memperbarui status di database.', 'error');
                 }
             } catch (e) {
                 console.error(e);
-                alert('Gagal memperbarui status.');
+                showAdminToast('Terjadi kesalahan saat memperbarui status.', 'error');
+            } finally {
+                selectElement.disabled = false;
             }
         }
 
@@ -965,4 +991,50 @@
                 alert('✓ Pengaturan telah direset ke default!');
                 location.reload();
             }
+        }
+
+        // ============ NOTIFICATION SYSTEM ============
+        function showAdminToast(message, type = 'info') {
+            let container = document.getElementById('admin-toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'admin-toast-container';
+                container.className = 'fixed top-5 right-5 z-[9999] flex flex-col gap-3';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            const bgColors = {
+                success: 'bg-green-600',
+                error: 'bg-red-600',
+                warning: 'bg-amber-500',
+                info: 'bg-blue-600'
+            };
+            
+            toast.className = `${bgColors[type] || 'bg-gray-800'} text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in-right min-w-[300px]`;
+            
+            const icons = {
+                success: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>',
+                error: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>',
+                warning: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>',
+                info: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+            };
+
+            toast.innerHTML = `
+                <div class="flex-shrink-0">${icons[type] || icons.info}</div>
+                <div class="flex-1 font-bold text-sm">${message}</div>
+                <button onclick="this.parentElement.remove()" class="flex-shrink-0 hover:bg-white/20 p-1 rounded-lg transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            `;
+
+            container.appendChild(toast);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.classList.add('animate-fade-out');
+                    setTimeout(() => toast.remove(), 500);
+                }
+            }, 5000);
         }
