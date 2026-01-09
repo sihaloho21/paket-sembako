@@ -680,6 +680,79 @@ function resetSettingsToDefault() {
     }
 }
 
+// ============ MARKUP MODAL FUNCTIONS ============
+function openEditMarkupModal(index) {
+    const config = CONFIG.getGajianConfig();
+    const markup = config.markups[index];
+    if (!markup) return;
+
+    document.getElementById('edit-markup-index').value = index;
+    document.getElementById('edit-markup-min-days').value = markup.minDays;
+    document.getElementById('edit-markup-rate').value = (markup.rate * 100).toFixed(1);
+    document.getElementById('edit-markup-modal').classList.remove('hidden');
+}
+
+function closeEditMarkupModal() {
+    document.getElementById('edit-markup-modal').classList.add('hidden');
+}
+
+document.getElementById('edit-markup-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const index = parseInt(document.getElementById('edit-markup-index').value);
+    const minDays = parseInt(document.getElementById('edit-markup-min-days').value);
+    const rate = parseFloat(document.getElementById('edit-markup-rate').value) / 100;
+
+    const config = CONFIG.getGajianConfig();
+    config.markups[index] = { minDays, rate };
+    
+    // Sort markups by minDays descending to keep logic consistent
+    config.markups.sort((a, b) => b.minDays - a.minDays);
+    
+    CONFIG.setGajianConfig(config);
+    renderGajianMarkups(config.markups);
+    closeEditMarkupModal();
+    showAdminToast('Skema markup diperbarui!', 'success');
+});
+
+// ============ REWARD OVERRIDE MODAL FUNCTIONS ============
+function openAddOverrideModal() {
+    document.getElementById('override-modal-title').innerText = 'Tambah Override Poin';
+    document.getElementById('reward-override-form').reset();
+    
+    const select = document.getElementById('override-product-name');
+    select.innerHTML = '<option value="">-- Pilih Produk --</option>' + 
+        allProducts.map(p => `<option value="${p.nama}">${p.nama}</option>`).join('');
+    
+    document.getElementById('reward-override-modal').classList.remove('hidden');
+}
+
+function closeRewardOverrideModal() {
+    document.getElementById('reward-override-modal').classList.add('hidden');
+}
+
+document.getElementById('reward-override-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const productName = document.getElementById('override-product-name').value;
+    const points = parseFloat(document.getElementById('override-point-value').value);
+
+    const config = CONFIG.getRewardConfig();
+    config.manualOverrides[productName] = points;
+    
+    CONFIG.setRewardConfig(config);
+    renderRewardOverrides(config.manualOverrides);
+    closeRewardOverrideModal();
+    showAdminToast('Override poin disimpan!', 'success');
+});
+
+function deleteRewardOverride(name) {
+    if (!confirm(`Hapus override untuk ${name}?`)) return;
+    const config = CONFIG.getRewardConfig();
+    delete config.manualOverrides[name];
+    CONFIG.setRewardConfig(config);
+    renderRewardOverrides(config.manualOverrides);
+    showAdminToast('Override poin dihapus!', 'success');
+}
+
 // ============ TOAST NOTIFICATION ============
 function showAdminToast(message, type = 'info') {
     let container = document.getElementById('admin-toast-container');
