@@ -140,6 +140,14 @@
             `).join('');
         }
 
+        function normalizePhone(phone) {
+            if (!phone) return '';
+            let p = phone.toString().replace(/[^0-9]/g, '');
+            if (p.startsWith('0')) p = '62' + p.slice(1);
+            if (p.startsWith('8')) p = '62' + p;
+            return p;
+        }
+
         async function updateOrderStatus(id, newStatus) {
             if (!newStatus) return;
             try {
@@ -157,7 +165,7 @@
                         const order = allOrders.find(o => o.id === id);
                         if (order && order.phone && order.poin) {
                             const pointsToAdd = parseFloat(order.poin) || 0;
-                            const phone = order.phone;
+                            const phone = normalizePhone(order.phone);
                             
                             // Check if user exists in user_points
                             const userRes = await fetch(`${API_URL}/search?sheet=user_points&phone=${phone}`);
