@@ -33,6 +33,7 @@
                 kategori: 'Kategori',
                 pesanan: 'Pesanan',
                 'tukar-poin': 'Tukar Poin',
+                'user-points': 'Poin Pengguna',
                 pengaturan: 'Pengaturan'
             };
             document.getElementById('section-title').innerText = titles[sectionId];
@@ -41,6 +42,7 @@
             if (sectionId === 'produk') fetchAdminProducts();
             if (sectionId === 'pesanan') fetchOrders();
             if (sectionId === 'tukar-poin') fetchTukarPoin();
+            if (sectionId === 'user-points') fetchUserPoints();
             if (sectionId === 'dashboard') updateDashboardStats();
         }
 
@@ -141,13 +143,56 @@
         async function updateOrderStatus(id, newStatus) {
             if (!newStatus) return;
             try {
+                // 1. Update order status
                 const response = await fetch(`${API_URL}/id/${id}?sheet=${ORDERS_SHEET}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ data: { status: newStatus } })
                 });
                 const result = await response.json();
+                
                 if (result.affected > 0) {
+                    // 2. If status is 'Terima' or 'Selesai', update user points
+                    if (newStatus === 'Terima' || newStatus === 'Selesai') {
+                        const order = allOrders.find(o => o.id === id);
+                        if (order && order.phone && order.poin) {
+                            const pointsToAdd = parseFloat(order.poin) || 0;
+                            const phone = order.phone;
+                            
+                            // Check if user exists in user_points
+                            const userRes = await fetch(`${API_URL}/search?sheet=user_points&phone=${phone}`);
+                            const userData = await userRes.json();
+                            
+                            if (Array.isArray(userData) && userData.length > 0) {
+                                // Update existing user
+                                const currentPoints = parseFloat(userData[0].points) || 0;
+                                await fetch(`${API_URL}/phone/${phone}?sheet=user_points`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ 
+                                        data: { 
+                                            points: currentPoints + pointsToAdd,
+                                            last_updated: new Date().toLocaleString('id-ID')
+                                        } 
+                                    })
+                                });
+                            } else {
+                                // Create new user entry
+                                await fetch(`${API_URL}?sheet=user_points`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ 
+                                        data: { 
+                                            phone: phone,
+                                            points: pointsToAdd,
+                                            last_updated: new Date().toLocaleString('id-ID')
+                                        } 
+                                    })
+                                });
+                            }
+                        }
+                    }
+                    
                     alert('Status pesanan diperbarui!');
                     fetchOrders();
                 }
@@ -156,6 +201,76 @@
                 alert('Gagal memperbarui status.');
             }
         }
+
+        // ============ USER POINTS FUNCTIONS ============
+        async function fetchUserPoints() {
+            const tbody = document.getElementById('user-points-list');
+            tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-10 text-center text-gray-500">Memuat data poin...</td></tr>';
+            
+            try {
+                const response = await fetch(`${API_URL}?sheet=user_points`);
+                let allUserPoints = await response.json();
+                if (!Array.isArray(allUserPoints)) allUserPoints = [];
+                
+                const searchQuery = document.getElementById('user-points-search').value.trim();
+                if (searchQuery) {
+                    allUserPoints = allUserPoints.filter(up => up.phone.includes(searchQuery));
+                }
+
+                if (allUserPoints.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-10 text-center text-gray-500">Tidak ada data poin pengguna.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = allUserPoints.map(up => `
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 text-sm font-medium text-gray-800">${up.phone}</td>
+                        <td class="px-6 py-4 text-sm font-bold text-amber-600">${parseFloat(up.points).toFixed(1)} Poin</td>
+                        <td class="px-6 py-4 text-xs text-gray-500">${up.last_updated || '-'}</td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="editUserPoints('${up.phone}', ${up.points})" class="text-blue-600 hover:text-blue-800 text-xs font-bold">Edit Poin</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error:', error);
+                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-10 text-center text-red-500">Gagal memuat data poin. Pastikan sheet "user_points" sudah ada.</td></tr>';
+            }
+        }
+
+        async function editUserPoints(phone, currentPoints) {
+            const newPoints = prompt(`Masukkan saldo poin baru untuk ${phone}:`, currentPoints);
+            if (newPoints === null || newPoints === "") return;
+            
+            try {
+                const response = await fetch(`${API_URL}/phone/${phone}?sheet=user_points`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        data: { 
+                            points: parseFloat(newPoints),
+                            last_updated: new Date().toLocaleString('id-ID')
+                        } 
+                    })
+                });
+                const result = await response.json();
+                if (result.affected > 0) {
+                    alert('Saldo poin diperbarui!');
+                    fetchUserPoints();
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Gagal memperbarui poin.');
+            }
+        }
+
+        // Add event listener for search input
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('user-points-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', fetchUserPoints);
+            }
+        });
 
         // ============ TUKAR POIN FUNCTIONS ============
         async function fetchTukarPoin() {

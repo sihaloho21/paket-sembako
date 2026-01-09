@@ -37,6 +37,10 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.407 2.67 1L12 11m0-3V7m0 11v1m0-1c-1.11 0-2.08-.407-2.67-1L12 13m0 5v1m-4.788-3.99a4.032 4.032 0 01-.788-2.01c0-2.21 1.79-4 4-4s4 1.79 4 4a4.032 4.032 0 01-.788 2.01M12 13v-1"></path></svg>
                 Tukar Poin
             </button>
+            <button onclick="showSection('user-points')" id="nav-user-points" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                Poin Pengguna
+            </button>
             <button onclick="showSection('pengaturan')" id="nav-pengaturan" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 Pengaturan
@@ -229,6 +233,33 @@
                         </thead>
                         <tbody id="tukar-poin-list" class="divide-y divide-gray-100">
                             <!-- Tukar Poin products will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Section: User Points -->
+            <section id="section-user-points" class="hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-800">Saldo Poin Pengguna</h3>
+                    <div class="flex gap-2">
+                        <input type="text" id="user-points-search" placeholder="Cari No. WA..." class="p-2 border rounded-lg text-sm outline-none focus:ring-1 focus:ring-green-500">
+                        <button onclick="fetchUserPoints()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition">Refresh</button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 border-b">
+                            <tr>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">No. WhatsApp</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Saldo Poin</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Update Terakhir</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-points-list" class="divide-y divide-gray-100">
+                            <!-- User points will be loaded here -->
                         </tbody>
                     </table>
                 </div>

@@ -853,41 +853,22 @@ async function checkUserPoints() {
 
     try {
         const API_URL = CONFIG.getAdminApiUrl();
-        
-        // 1. Fetch points from orders
-        const ordersResponse = await fetch(`${API_URL}?sheet=orders`);
-        const allOrders = await ordersResponse.json();
-        
-        // Filter orders by phone (using a simple check since SheetDB search might be limited)
-        // In a real scenario, we'd use SheetDB's search feature more effectively
         const normalizedSearchPhone = normalizePhone(phone);
-        const userOrders = allOrders.filter(o => {
-            const orderPhone = normalizePhone(o.phone || '');
-            return orderPhone === normalizedSearchPhone || (o.pelanggan && o.pelanggan.includes(phone));
-        });
         
-        let earnedPoints = userOrders.reduce((sum, o) => sum + (parseFloat(o.poin) || 0), 0);
-
-        // 2. Fetch used points from claims (if exists)
-        let usedPoints = 0;
-        try {
-            const claimsResponse = await fetch(`${API_URL}?sheet=claims`);
-            if (claimsResponse.ok) {
-                const allClaims = await claimsResponse.json();
-                const normalizedSearchPhone = normalizePhone(phone);
-                const userClaims = allClaims.filter(c => normalizePhone(c.phone) === normalizedSearchPhone && c.status !== 'Dibatalkan');
-                usedPoints = userClaims.reduce((sum, c) => sum + (parseFloat(c.poin) || 0), 0);
-            }
-        } catch (e) {
-            console.log('Claims sheet not found or inaccessible, skipping used points subtraction.');
+        // Fetch from user_points sheet
+        const response = await fetch(`${API_URL}/search?sheet=user_points&phone=${normalizedSearchPhone}`);
+        const userData = await response.json();
+        
+        if (Array.isArray(userData) && userData.length > 0) {
+            userPointsBalance = parseFloat(userData[0].points) || 0;
+        } else {
+            userPointsBalance = 0;
         }
-
-        userPointsBalance = Math.max(0, earnedPoints - usedPoints);
 
         display.innerHTML = `
             <p class="text-xs text-amber-600 font-medium">Total Poin Anda:</p>
             <h4 class="text-3xl font-black text-amber-700">${userPointsBalance.toFixed(1)} <span class="text-sm font-bold">Poin</span></h4>
-            <p class="text-[10px] text-gray-400 mt-1 italic">*Poin dihitung dari riwayat pesanan Anda.</p>
+            <p class="text-[10px] text-gray-400 mt-1 italic">*Saldo poin terpusat untuk kemudahan Anda.</p>
         `;
 
         // Refresh reward items to enable/disable buttons based on new balance
@@ -940,6 +921,7 @@ Mohon diproses penukarannya, terima kasih!`;
     btn.innerHTML = '...';
 
     try {
+        // 1. Record claim to SheetDB
         const response = await fetch(`${API_URL}?sheet=claims`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -947,11 +929,26 @@ Mohon diproses penukarannya, terima kasih!`;
         });
 
         if (response.ok) {
+            // 2. Deduct points from user_points sheet
+            const normalizedPhone = normalizePhone(userPhoneForReward);
+            const newBalance = userPointsBalance - pointCost;
+            
+            await fetch(`${API_URL}/phone/${normalizedPhone}?sheet=user_points`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    data: { 
+                        points: newBalance,
+                        last_updated: new Date().toLocaleString('id-ID')
+                    } 
+                })
+            });
+
             window.open(waUrl, '_blank');
             showToast(`Permintaan klaim ${rewardName} telah dikirim!`);
             
             // Update local balance and UI
-            userPointsBalance -= pointCost;
+            userPointsBalance = newBalance;
             const display = document.getElementById('points-display');
             if (display) {
                 const h4 = display.querySelector('h4');
