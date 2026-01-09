@@ -94,9 +94,19 @@ function calculateRewardPoints(price, productName) {
     }
 
     // Automatic calculation: 1 point per pointValue (default 10,000)
-    let points = price / config.pointValue;
+    // Minimal pembelanjaan 10.000 mendapatkan 1 poin, berlaku kelipatannya
+    let points = 0;
+    if (price >= config.pointValue) {
+        points = Math.floor(price / config.pointValue);
+    } else if (price > 0) {
+        // If price is below pointValue but above 0, check if we should give minPoint
+        // However, based on "minimal pembelanjaan 10.000", we might want to return 0
+        // But the user also said "desimal poin atau poin paling kecil adalah, 0.1 = Rp 100"
+        // So if price is 100, they get 0.1 points.
+        points = price / config.pointValue;
+    }
     
-    // Apply minimum
+    // Apply minimum floor for decimal points
     if (points < config.minPoint && points > 0) {
         points = config.minPoint;
     }
