@@ -9,7 +9,7 @@ document.getElementById('login-form').onsubmit = (e) => {
     const pass = document.getElementById('password').value;
     const errorMsg = document.getElementById('error-message');
 
-    if (user === 'admin' && pass === '121212') {
+    if (user === 'admin' && pass === '@Sihaloho1995@') {
         localStorage.setItem('admin_logged_in', 'true');
         window.location.href = 'index.html';
     } else {
