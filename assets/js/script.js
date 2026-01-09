@@ -70,7 +70,7 @@ function renderProducts(products) {
         const images = p.gambar ? p.gambar.split(',') : [];
         const mainImage = images[0] || 'https://via.placeholder.com/300x200?text=Produk';
 
-        const rewardPoints = calculateRewardPoints(p.harga, p.category);
+        const rewardPoints = calculateRewardPoints(p.harga, p.nama);
         grid.innerHTML += `
             <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition duration-300 relative">
                 <div class="absolute top-3 left-3 z-10">
@@ -326,7 +326,7 @@ function showDetail(p) {
     if (gajianPriceEl) gajianPriceEl.innerText = `Rp ${p.hargaGajian.toLocaleString('id-ID')}`;
     
     if (badgesEl) {
-        const rewardPoints = calculateRewardPoints(p.harga, p.category);
+        const rewardPoints = calculateRewardPoints(p.harga, p.nama);
         badgesEl.innerHTML = `
             <span class="bg-green-100 text-green-700 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wider">${p.category}</span>
             <span class="bg-amber-100 text-amber-700 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wider flex items-center gap-1">
@@ -409,7 +409,7 @@ function openOrderModal() {
         summaryEl.innerHTML = cart.map(item => {
             const price = isGajian ? item.hargaGajian : item.harga;
             // Points are always calculated based on the base cash price for fairness
-            const itemPoints = calculateRewardPoints(item.harga, item.category) * item.qty;
+            const itemPoints = calculateRewardPoints(item.harga, item.nama) * item.qty;
             totalPoints += itemPoints;
             return `
                 <div class="flex justify-between items-center py-1">
@@ -597,7 +597,7 @@ function updateOrderTotal() {
         summaryEl.innerHTML = cart.map(item => {
             const price = isGajian ? item.hargaGajian : item.harga;
             // Points are always calculated based on the base cash price for fairness
-            const itemPoints = calculateRewardPoints(item.harga, item.category) * item.qty;
+            const itemPoints = calculateRewardPoints(item.harga, item.nama) * item.qty;
             totalPoints += itemPoints;
             return `
                 <div class="flex justify-between items-center py-1">
@@ -669,7 +669,7 @@ function sendToWA() {
         const price = isGajian ? item.hargaGajian : item.harga;
         const subtotal = price * item.qty;
         // Points are always calculated based on the base cash price for fairness
-        const itemPoints = calculateRewardPoints(item.harga, item.category) * item.qty;
+        const itemPoints = calculateRewardPoints(item.harga, item.nama) * item.qty;
         grandTotal += subtotal;
         totalPoints += itemPoints;
         itemDetails += `${index + 1}. ${item.nama} (x${item.qty})\n   Harga: Rp ${price.toLocaleString('id-ID')}\n   Subtotal: Rp ${subtotal.toLocaleString('id-ID')}\n   Poin: +${itemPoints.toFixed(1)}\n`;

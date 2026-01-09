@@ -15,7 +15,8 @@ const CONFIG = {
     STORAGE_KEYS: {
         MAIN_API: 'sembako_main_api_url',
         ADMIN_API: 'sembako_admin_api_url',
-        GAJIAN_CONFIG: 'sembako_gajian_config'
+        GAJIAN_CONFIG: 'sembako_gajian_config',
+        REWARD_CONFIG: 'sembako_reward_config'
     },
     
     /**
@@ -110,6 +111,34 @@ const CONFIG = {
     },
 
     /**
+     * Mendapatkan konfigurasi Reward Poin
+     * @returns {object} Konfigurasi reward
+     */
+    getRewardConfig() {
+        const saved = localStorage.getItem(this.STORAGE_KEYS.REWARD_CONFIG);
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error('Error parsing reward config', e);
+            }
+        }
+        return {
+            pointValue: 10000, // 10.000 IDR = 1 point
+            minPoint: 0.1,
+            manualOverrides: {} // { productName: points }
+        };
+    },
+
+    /**
+     * Menyimpan konfigurasi Reward Poin
+     * @param {object} config - Konfigurasi baru
+     */
+    setRewardConfig(config) {
+        localStorage.setItem(this.STORAGE_KEYS.REWARD_CONFIG, JSON.stringify(config));
+    },
+
+    /**
      * Mendapatkan semua konfigurasi saat ini
      * @returns {object} Objek berisi semua konfigurasi
      */
@@ -117,7 +146,8 @@ const CONFIG = {
         return {
             mainApi: this.getMainApiUrl(),
             adminApi: this.getAdminApiUrl(),
-            gajian: this.getGajianConfig()
+            gajian: this.getGajianConfig(),
+            reward: this.getRewardConfig()
         };
     }
 };

@@ -272,6 +272,48 @@
                     </div>
 
                     <div class="pt-6 border-t">
+                        <h4 class="font-bold text-gray-800 mb-4">Konfigurasi Reward Poin</h4>
+                        <div class="bg-amber-50 p-6 rounded-2xl border border-amber-100 space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-2">Nilai 1 Poin (Rp)</label>
+                                    <input type="number" id="reward-point-value" min="1" class="w-full p-3 border border-amber-200 rounded-xl outline-none focus:border-amber-500 bg-white">
+                                    <p class="text-xs text-amber-600 mt-1">Contoh: 10000 berarti Rp 10.000 = 1 Poin</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-2">Poin Minimum</label>
+                                    <input type="number" id="reward-min-point" min="0" step="0.1" class="w-full p-3 border border-amber-200 rounded-xl outline-none focus:border-amber-500 bg-white">
+                                    <p class="text-xs text-amber-600 mt-1">Contoh: 0.1</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6">
+                                <h5 class="font-bold text-gray-800 mb-3">Override Poin Manual per Produk</h5>
+                                <div class="bg-white rounded-lg p-4 border border-amber-100">
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-sm">
+                                            <thead>
+                                                <tr class="border-b border-gray-200">
+                                                    <th class="text-left py-2 px-2 font-bold text-gray-700">Nama Produk</th>
+                                                    <th class="text-left py-2 px-2 font-bold text-gray-700">Poin Manual</th>
+                                                    <th class="text-left py-2 px-2 font-bold text-gray-700">Aksi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="reward-overrides-table">
+                                                <!-- Overrides will be loaded here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <button type="button" onclick="openAddOverrideModal()" class="mt-4 text-amber-600 hover:text-amber-700 font-bold text-sm flex items-center gap-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                        Tambah Override Manual
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 border-t">
                         <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 space-y-4">
                             <h4 class="font-bold text-blue-800 mb-4">Integrasi SheetDB API</h4>
                             
@@ -320,6 +362,29 @@
                                 <div class="flex gap-3 pt-4">
                                     <button type="button" onclick="closeEditMarkupModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition">Batal</button>
                                     <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition">Simpan</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Add/Edit Reward Override Modal -->
+                    <div id="reward-override-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+                        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-8">
+                            <h3 id="override-modal-title" class="text-2xl font-bold text-gray-800 mb-6">Tambah Override Poin</h3>
+                            <form id="reward-override-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-2">Pilih Produk</label>
+                                    <select id="override-product-name" required class="w-full p-3 border rounded-xl outline-none focus:border-amber-500">
+                                        <option value="">-- Pilih Produk --</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-2">Nilai Poin Manual</label>
+                                    <input type="number" id="override-point-value" required min="0" step="0.1" class="w-full p-3 border rounded-xl outline-none focus:border-amber-500">
+                                </div>
+                                <div class="flex gap-3 pt-4">
+                                    <button type="button" onclick="closeRewardOverrideModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition">Batal</button>
+                                    <button type="submit" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl transition">Simpan</button>
                                 </div>
                             </form>
                         </div>

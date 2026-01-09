@@ -453,6 +453,74 @@
             if (defaultMarkupInput) defaultMarkupInput.value = Math.round(config.defaultMarkup * 100);
             renderGajianMarkupsTable(config.markups);
         }
+
+        // ============ REWARD CONFIG FUNCTIONS ============
+        function loadRewardConfigUI() {
+            const config = CONFIG.getRewardConfig();
+            const pointValueInput = document.getElementById('reward-point-value');
+            if (pointValueInput) pointValueInput.value = config.pointValue;
+            const minPointInput = document.getElementById('reward-min-point');
+            if (minPointInput) minPointInput.value = config.minPoint;
+            renderRewardOverridesTable(config.manualOverrides);
+            updateOverrideProductDropdown();
+        }
+
+        function renderRewardOverridesTable(overrides) {
+            const tbody = document.getElementById('reward-overrides-table');
+            if (!tbody) return;
+            
+            const keys = Object.keys(overrides);
+            if (keys.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-gray-500 italic">Belum ada override manual.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = keys.map(productName => `
+                <tr class="border-b border-gray-100 hover:bg-gray-50">
+                    <td class="py-3 px-2 font-medium text-gray-800">${productName}</td>
+                    <td class="py-3 px-2 text-amber-600 font-bold">${overrides[productName]} Poin</td>
+                    <td class="py-3 px-2">
+                        <button type="button" onclick="deleteRewardOverride('${productName}')" class="text-red-600 hover:text-red-800 font-medium text-sm">Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateOverrideProductDropdown() {
+            const select = document.getElementById('override-product-name');
+            if (!select) return;
+            
+            // We need allProducts to be loaded
+            if (allProducts.length === 0) {
+                // Try fetching if empty
+                fetchAdminProducts().then(() => {
+                    select.innerHTML = '<option value="">-- Pilih Produk --</option>' + 
+                        allProducts.map(p => `<option value="${p.nama}">${p.nama}</option>`).join('');
+                });
+            } else {
+                select.innerHTML = '<option value="">-- Pilih Produk --</option>' + 
+                    allProducts.map(p => `<option value="${p.nama}">${p.nama}</option>`).join('');
+            }
+        }
+
+        function openAddOverrideModal() {
+            document.getElementById('reward-override-form').reset();
+            updateOverrideProductDropdown();
+            document.getElementById('reward-override-modal').classList.remove('hidden');
+        }
+
+        function closeRewardOverrideModal() {
+            document.getElementById('reward-override-modal').classList.add('hidden');
+        }
+
+        function deleteRewardOverride(productName) {
+            if (confirm(`Hapus override poin untuk "${productName}"?`)) {
+                const config = CONFIG.getRewardConfig();
+                delete config.manualOverrides[productName];
+                CONFIG.setRewardConfig(config);
+                renderRewardOverridesTable(config.manualOverrides);
+            }
+        }
         
         function renderGajianMarkupsTable(markups) {
             const tbody = document.getElementById('gajian-markups-table');
@@ -486,7 +554,25 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadSettingsUI();
             loadGajianConfigUI();
+            loadRewardConfigUI();
         });
+
+        const rewardOverrideForm = document.getElementById('reward-override-form');
+        if (rewardOverrideForm) {
+            rewardOverrideForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const productName = document.getElementById('override-product-name').value;
+                const pointValue = parseFloat(document.getElementById('override-point-value').value);
+                
+                const config = CONFIG.getRewardConfig();
+                config.manualOverrides[productName] = pointValue;
+                CONFIG.setRewardConfig(config);
+                
+                renderRewardOverridesTable(config.manualOverrides);
+                closeRewardOverrideModal();
+                alert('Override poin berhasil disimpan!');
+            });
+        }
 
         const editMarkupForm = document.getElementById('edit-markup-form');
         if (editMarkupForm) {
@@ -524,6 +610,11 @@
             const targetDay = targetDayInput ? parseInt(targetDayInput.value) : 7;
             const defaultMarkup = defaultMarkupInput ? parseInt(defaultMarkupInput.value) / 100 : 0.25;
             
+            const rewardPointValueInput = document.getElementById('reward-point-value');
+            const rewardMinPointInput = document.getElementById('reward-min-point');
+            const rewardPointValue = rewardPointValueInput ? parseInt(rewardPointValueInput.value) : 10000;
+            const rewardMinPoint = rewardMinPointInput ? parseFloat(rewardMinPointInput.value) : 0.1;
+            
             let hasError = false;
             let errorMessages = [];
 
@@ -557,10 +648,16 @@
             if (adminApiUrl) CONFIG.setAdminApiUrl(adminApiUrl);
             
             // Save Gajian config
-            const config = CONFIG.getGajianConfig();
-            config.targetDay = targetDay;
-            config.defaultMarkup = defaultMarkup;
-            CONFIG.setGajianConfig(config);
+            const gajianConfig = CONFIG.getGajianConfig();
+            gajianConfig.targetDay = targetDay;
+            gajianConfig.defaultMarkup = defaultMarkup;
+            CONFIG.setGajianConfig(gajianConfig);
+
+            // Save Reward config
+            const rewardConfig = CONFIG.getRewardConfig();
+            rewardConfig.pointValue = rewardPointValue;
+            rewardConfig.minPoint = rewardMinPoint;
+            CONFIG.setRewardConfig(rewardConfig);
 
             // Update global API_URL variable
             API_URL = CONFIG.getAdminApiUrl();
