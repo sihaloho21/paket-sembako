@@ -13,10 +13,12 @@
         const CATEGORIES_SHEET = 'categories';
         const PRODUCTS_SHEET = 'Sheet1';
         const ORDERS_SHEET = 'orders';
+        const TUKAR_POIN_SHEET = 'tukar_poin';
         
         let allProducts = [];
         let allCategories = [];
         let allOrders = [];
+        let allTukarPoin = [];
         let currentOrderFilter = 'semua';
 
         function showSection(sectionId) {
@@ -30,6 +32,7 @@
                 produk: 'Produk',
                 kategori: 'Kategori',
                 pesanan: 'Pesanan',
+                'tukar-poin': 'Tukar Poin',
                 pengaturan: 'Pengaturan'
             };
             document.getElementById('section-title').innerText = titles[sectionId];
@@ -37,6 +40,7 @@
             if (sectionId === 'kategori') fetchCategories();
             if (sectionId === 'produk') fetchAdminProducts();
             if (sectionId === 'pesanan') fetchOrders();
+            if (sectionId === 'tukar-poin') fetchTukarPoin();
             if (sectionId === 'dashboard') updateDashboardStats();
         }
 
@@ -152,6 +156,144 @@
                 alert('Gagal memperbarui status.');
             }
         }
+
+        // ============ TUKAR POIN FUNCTIONS ============
+        async function fetchTukarPoin() {
+            const tbody = document.getElementById('tukar-poin-list');
+            tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-10 text-center text-gray-500">Memuat data tukar poin...</td></tr>';
+            
+            try {
+                const response = await fetch(`${API_URL}?sheet=${TUKAR_POIN_SHEET}`);
+                allTukarPoin = await response.json();
+                if (!Array.isArray(allTukarPoin)) allTukarPoin = [];
+                renderTukarPoinTable();
+            } catch (error) {
+                console.error('Error:', error);
+                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-10 text-center text-red-500">Gagal memuat data tukar poin. Pastikan sheet "tukar_poin" sudah ada.</td></tr>';
+            }
+        }
+
+        function renderTukarPoinTable() {
+            const tbody = document.getElementById('tukar-poin-list');
+            if (allTukarPoin.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-10 text-center text-gray-500">Belum ada produk tukar poin.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = allTukarPoin.map(tp => `
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <img src="${tp.gambar}" alt="${tp.judul}" class="w-10 h-10 rounded-lg object-cover bg-gray-100">
+                            <span class="font-bold text-gray-800">${tp.judul}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm font-bold text-amber-600">${tp.poin} Poin</td>
+                    <td class="px-6 py-4 text-sm text-gray-500 truncate max-w-xs">${tp.deskripsi || '-'}</td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex justify-end gap-2">
+                            <button onclick="openEditTukarPoinModal('${tp.id}')" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            </button>
+                            <button onclick="handleDeleteTukarPoin('${tp.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openAddTukarPoinModal() {
+            document.getElementById('tukar-poin-modal-title').innerText = 'Tambah Produk Tukar Poin';
+            document.getElementById('tukar-poin-form').reset();
+            document.getElementById('tukar-poin-id').value = '';
+            document.getElementById('tukar-poin-modal').classList.remove('hidden');
+        }
+
+        function openEditTukarPoinModal(id) {
+            const tp = allTukarPoin.find(item => item.id == id);
+            if (!tp) return;
+
+            document.getElementById('tukar-poin-modal-title').innerText = 'Edit Produk Tukar Poin';
+            document.getElementById('tukar-poin-id').value = tp.id;
+            document.getElementById('form-tukar-judul').value = tp.judul;
+            document.getElementById('form-tukar-poin').value = tp.poin;
+            document.getElementById('form-tukar-gambar').value = tp.gambar;
+            document.getElementById('form-tukar-deskripsi').value = tp.deskripsi || '';
+            
+            document.getElementById('tukar-poin-modal').classList.remove('hidden');
+        }
+
+        function closeTukarPoinModal() {
+            document.getElementById('tukar-poin-modal').classList.add('hidden');
+        }
+
+        async function handleDeleteTukarPoin(id) {
+            if (!confirm('Apakah Anda yakin ingin menghapus produk tukar poin ini?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/id/${id}?sheet=${TUKAR_POIN_SHEET}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                if (result.deleted > 0) {
+                    alert('Produk tukar poin berhasil dihapus!');
+                    fetchTukarPoin();
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Gagal menghapus produk.');
+            }
+        }
+
+        document.getElementById('tukar-poin-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const id = document.getElementById('tukar-poin-id').value;
+            const data = {
+                judul: document.getElementById('form-tukar-judul').value,
+                poin: document.getElementById('form-tukar-poin').value,
+                gambar: document.getElementById('form-tukar-gambar').value,
+                deskripsi: document.getElementById('form-tukar-deskripsi').value
+            };
+
+            const btn = document.getElementById('tukar-poin-submit-btn');
+            btn.disabled = true;
+            btn.innerText = 'Menyimpan...';
+
+            try {
+                let response;
+                if (id) {
+                    // Edit
+                    response = await fetch(`${API_URL}/id/${id}?sheet=${TUKAR_POIN_SHEET}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data })
+                    });
+                } else {
+                    // Add
+                    data.id = Date.now(); // Simple ID generation
+                    response = await fetch(`${API_URL}?sheet=${TUKAR_POIN_SHEET}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data: [data] })
+                    });
+                }
+
+                const result = await response.json();
+                if (result.affected > 0 || result.created > 0) {
+                    alert(id ? 'Produk diperbarui!' : 'Produk ditambahkan!');
+                    closeTukarPoinModal();
+                    fetchTukarPoin();
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Gagal menyimpan data.');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Simpan';
+            }
+        });
 
         // ============ CATEGORY FUNCTIONS ============
         async function fetchCategories() {
