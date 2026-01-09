@@ -669,16 +669,7 @@ function saveSettings() {
     setTimeout(() => location.reload(), 1000);
 }
 
-function resetSettingsToDefault() {
-    if (confirm('Apakah Anda yakin ingin mereset semua pengaturan ke default?')) {
-        CONFIG.resetToDefault('main');
-        CONFIG.resetToDefault('admin');
-        localStorage.removeItem(CONFIG.STORAGE_KEYS.GAJIAN_CONFIG);
-        localStorage.removeItem(CONFIG.STORAGE_KEYS.REWARD_CONFIG);
-        showAdminToast('Pengaturan telah direset ke default!', 'success');
-        setTimeout(() => location.reload(), 1000);
-    }
-}
+
 
 // ============ MARKUP MODAL FUNCTIONS ============
 function openEditMarkupModal(index) {
