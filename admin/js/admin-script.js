@@ -143,14 +143,17 @@
         function normalizePhone(phone) {
             if (!phone) return '';
             let p = phone.toString().replace(/[^0-9]/g, '');
-            if (p.startsWith('0')) p = '62' + p.slice(1);
-            if (p.startsWith('8')) p = '62' + p;
+            if (p.startsWith('62')) p = '0' + p.slice(2);
+            if (p.startsWith('8')) p = '0' + p;
             return p;
         }
 
         async function updateOrderStatus(id, newStatus) {
             if (!newStatus) return;
             try {
+                const order = allOrders.find(o => o.id === id);
+                if (!order) return;
+
                 // 1. Update order status
                 const response = await fetch(`${API_URL}/id/${id}?sheet=${ORDERS_SHEET}`, {
                     method: 'PATCH',
@@ -161,9 +164,8 @@
                 
                 if (result.affected > 0) {
                     // 2. If status is 'Terima' or 'Selesai', update user points
-                    if (newStatus === 'Terima' || newStatus === 'Selesai') {
-                        const order = allOrders.find(o => o.id === id);
-                        if (order && order.phone && order.poin) {
+                    if ((newStatus === 'Terima' || newStatus === 'Selesai') && order.points_awarded !== 'Ya') {
+                        if (order.phone && order.poin) {
                             const pointsToAdd = parseFloat(order.poin) || 0;
                             const phone = normalizePhone(order.phone);
                             
@@ -171,10 +173,11 @@
                             const userRes = await fetch(`${API_URL}/search?sheet=user_points&phone=${phone}`);
                             const userData = await userRes.json();
                             
+                            let pointUpdateSuccess = false;
                             if (Array.isArray(userData) && userData.length > 0) {
                                 // Update existing user
                                 const currentPoints = parseFloat(userData[0].points) || 0;
-                                await fetch(`${API_URL}/phone/${phone}?sheet=user_points`, {
+                                const updateRes = await fetch(`${API_URL}/phone/${phone}?sheet=user_points`, {
                                     method: 'PATCH',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ 
@@ -184,9 +187,10 @@
                                         } 
                                     })
                                 });
+                                if (updateRes.ok) pointUpdateSuccess = true;
                             } else {
                                 // Create new user entry
-                                await fetch(`${API_URL}?sheet=user_points`, {
+                                const createRes = await fetch(`${API_URL}?sheet=user_points`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ 
@@ -196,6 +200,16 @@
                                             last_updated: new Date().toLocaleString('id-ID')
                                         } 
                                     })
+                                });
+                                if (createRes.ok) pointUpdateSuccess = true;
+                            }
+
+                            // 3. Mark points as awarded in the orders sheet to prevent double points
+                            if (pointUpdateSuccess) {
+                                await fetch(`${API_URL}/id/${id}?sheet=${ORDERS_SHEET}`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ data: { points_awarded: 'Ya' } })
                                 });
                             }
                         }

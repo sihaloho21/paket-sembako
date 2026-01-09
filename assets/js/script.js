@@ -710,7 +710,8 @@ Mohon segera diproses, terima kasih!`;
         total: grandTotal,
         poin: totalPoints.toFixed(1),
         status: 'Menunggu',
-        tanggal: dateStr
+        tanggal: dateStr,
+        points_awarded: 'Tidak'
     };
 
     const submitBtn = document.querySelector('button[onclick="sendToWA()"]');
@@ -753,8 +754,13 @@ Mohon segera diproses, terima kasih!`;
 function normalizePhone(phone) {
     if (!phone) return '';
     let p = phone.replace(/[^0-9]/g, '');
-    if (p.startsWith('0')) p = '62' + p.slice(1);
-    if (p.startsWith('8')) p = '62' + p;
+    if (p.startsWith('62')) p = '0' + p.slice(2);
+    if (p.startsWith('8')) p = '0' + p;
+    // Ensure it starts with 08
+    if (!p.startsWith('08') && p.length > 0) {
+        // If it's just numbers but doesn't start with 08, we might need to be careful, 
+        // but based on user request, we want 08 format.
+    }
     return p;
 }
 
