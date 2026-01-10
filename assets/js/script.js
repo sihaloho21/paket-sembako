@@ -312,8 +312,7 @@ function showDetail(p) {
     if (!modal) return;
 
     const nameEl = document.getElementById('modal-product-name');
-    const sliderEl = document.getElementById('modal-slider');
-    const dotsEl = document.getElementById('slider-dots');
+    const imageEl = document.getElementById('modal-product-image');
     const cashPriceEl = document.getElementById('modal-cash-price');
     const gajianPriceEl = document.getElementById('modal-gajian-price');
     const itemsListEl = document.getElementById('modal-items-list');
@@ -342,17 +341,10 @@ function showDetail(p) {
         savingsHighlight.classList.remove('hidden');
     }
 
-    if (sliderEl) {
+    if (imageEl) {
         const images = p.gambar ? p.gambar.split(',') : [];
-        sliderEl.innerHTML = images.map(img => `
-            <img src="${img}" class="w-full h-full object-cover flex-shrink-0" onerror="this.src='https://via.placeholder.com/300x200?text=Produk'">
-        `).join('');
-        
-        if (dotsEl) {
-            dotsEl.innerHTML = images.map((_, i) => `
-                <div class="w-2 h-2 rounded-full bg-white/50 ${i === 0 ? 'bg-white w-4' : ''}"></div>
-            `).join('');
-        }
+        imageEl.src = images.length > 0 ? images[0] : 'https://via.placeholder.com/300x200?text=Produk';
+        imageEl.onerror = function() { this.src = 'https://via.placeholder.com/300x200?text=Produk'; };
     }
 
     if (itemsListEl) {
