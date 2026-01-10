@@ -341,8 +341,11 @@ function showDetail(p) {
         savingsHighlight.classList.remove('hidden');
     }
 
-    if (imageEl) {
-        const images = p.gambar ? p.gambar.split(',') : [];
+    // Initialize Image Slider
+    const images = p.gambar ? p.gambar.split(',') : [];
+    if (typeof initializeSlider === 'function') {
+        initializeSlider(images);
+    } else if (imageEl) {
         imageEl.src = images.length > 0 ? images[0] : 'https://via.placeholder.com/300x200?text=Produk';
         imageEl.onerror = function() { this.src = 'https://via.placeholder.com/300x200?text=Produk'; };
     }

@@ -78,9 +78,22 @@
             </button>
 
             <div id="modal-product-content">
-                <!-- Product Image -->
-                <div class="relative h-64 w-full overflow-hidden rounded-t-2xl bg-gray-100">
-                    <img id="modal-product-image" src="" alt="Produk" class="w-full h-full object-cover">
+                <!-- Product Image Slider -->
+                <div class="slider-container relative h-64 w-full overflow-hidden rounded-t-2xl bg-gray-100">
+                    <div id="slider-skeleton" class="skeleton-loader absolute inset-0 z-10 bg-gray-200 animate-pulse"></div>
+                    <div id="modal-slider" class="relative h-full w-full">
+                        <!-- Images are dynamically loaded here by JavaScript -->
+                    </div>
+                    <div class="slider-counter absolute top-4 left-4 z-20 bg-black/50 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-lg" id="slider-counter">1 / 1</div>
+                    <div id="slider-dots" class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-black/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                        <!-- Dots are dynamically loaded here by JavaScript -->
+                    </div>
+                    <button onclick="prevSlide()" class="slider-arrow prev absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-800 shadow-sm hover:bg-white transition" title="Gambar sebelumnya">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <button onclick="nextSlide()" class="slider-arrow next absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-800 shadow-sm hover:bg-white transition" title="Gambar berikutnya">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
                 </div>
 
                 <div class="p-6 space-y-5">
@@ -141,6 +154,22 @@
                     Beli Sekarang
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- Lightbox Modal for zoomed images -->
+    <div id="lightbox-modal" class="fixed inset-0 bg-black/95 backdrop-blur-sm z-[60] hidden flex items-center justify-center">
+        <div class="relative w-full h-full flex items-center justify-center p-4">
+            <img id="lightbox-image" class="max-w-full max-h-full object-contain transition-transform duration-300 cursor-zoom-in" src="" alt="Product Image">
+            <button class="absolute top-6 right-6 text-white hover:text-gray-300 transition" onclick="closeLightbox()">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <button class="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition" onclick="lightboxPrev()">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <button class="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition" onclick="lightboxNext()">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </button>
         </div>
     </div>
 
@@ -430,6 +459,7 @@
 
     <script src="assets/js/config.js"></script>
     <script src="assets/js/payment-logic.js"></script>
+    <script src="assets/js/slider-enhanced.js"></script>
     <script src="assets/js/script.js"></script>
 </body>
 </html>

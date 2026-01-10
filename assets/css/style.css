@@ -127,9 +127,31 @@ body.modal-active { overflow-x: hidden; overflow-y: visible !important; }
 }
 
 /* Slider Transition */
-#modal-slider {
-    display: flex;
-    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+.slider-container {
+    position: relative;
+    background: #f3f4f6;
+}
+
+#modal-slider img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.slider-dot {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.slider-arrow {
+    transition: all 0.2s ease;
+}
+
+.slider-arrow:active {
+    transform: translateY(-50%) scale(0.9);
 }
 
 .slider-dot {
