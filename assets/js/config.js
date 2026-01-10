@@ -7,8 +7,8 @@
 const CONFIG = {
     // Default API URLs
     DEFAULTS: {
-        MAIN_API: 'https://sheetdb.io/api/v1/ollu7q79t1lc8',
-        ADMIN_API: 'https://sheetdb.io/api/v1/ollu7q79t1lc8'
+        MAIN_API: 'https://sheetdb.io/api/v1/i3rh62meaq0fw',
+        ADMIN_API: 'https://sheetdb.io/api/v1/i3rh62meaq0fw'
     },
     
     // Storage keys
