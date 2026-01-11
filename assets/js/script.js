@@ -79,7 +79,7 @@ function renderProducts(products) {
                         +${rewardPoints} Poin
                     </div>
                 </div>
-                <img src="${mainImage}" alt="${p.nama}" class="w-full h-48 object-cover ${p.stok === 0 ? 'grayscale opacity-60' : ''}" onerror="this.src='https://via.placeholder.com/300x200?text=Produk'">
+                <img src="${mainImage}" alt="${p.nama}" onclick='showDetail(${pData})' class="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity ${p.stok === 0 ? 'grayscale opacity-60' : ''}" onerror="this.src='https://via.placeholder.com/300x200?text=Produk'">
                 <div class="p-6">
                     <div class="flex justify-between items-start mb-2">
                         <h4 class="text-lg font-bold text-gray-800">${p.nama}</h4>
