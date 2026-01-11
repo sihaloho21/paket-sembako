@@ -516,7 +516,7 @@ function closeOrderModal() {
 }
 
 function shareProduct(name) {
-    const text = `Cek paket sembako murah "${name}" di Harapan Jaya! Kualitas terjamin, harga bersahabat.`;
+    const text = `Cek paket sembako murah "${name}" di GoSembako! Kualitas terjamin, harga bersahabat.`;
     const url = window.location.href;
     const waUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`;
     window.open(waUrl, '_blank');

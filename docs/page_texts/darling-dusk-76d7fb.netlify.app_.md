@@ -1,10 +1,10 @@
-# Harapan Jaya – Paket Sembako Murah
+# GoSembako – Paket Sembako Murah
 
 **URL:** https://darling-dusk-76d7fb.netlify.app/
 
 ---
 
-Harapan Jaya
+GoSembako
 Login Admin
 Paket Sembako Murah & Lengkap
 
@@ -102,4 +102,4 @@ Beli Sekarang
 
 Diantar Nikomas - Diantar Kerumah - Ambil Ditempat
 
-© 2026 Harapan Jaya Sembako. Semua Hak Dilindungi.
+© 2026 GoSembako Sembako. Semua Hak Dilindungi.
