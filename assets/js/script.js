@@ -1036,3 +1036,24 @@ Mohon diproses penukarannya, terima kasih!`;
         btn.innerHTML = originalText;
     }
 }
+
+// Hidden Admin Trigger: Click logo 3 times to access admin page
+let logoClickCount = 0;
+let logoClickTimer = null;
+
+function handleLogoClick() {
+    logoClickCount++;
+    
+    if (logoClickTimer) {
+        clearTimeout(logoClickTimer);
+    }
+    
+    if (logoClickCount === 3) {
+        logoClickCount = 0;
+        window.location.href = '/admin';
+    } else {
+        logoClickTimer = setTimeout(() => {
+            logoClickCount = 0;
+        }, 1000); // Reset count if not clicked 3 times within 1 second
+    }
+}
