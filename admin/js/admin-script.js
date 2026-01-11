@@ -42,11 +42,39 @@ function showSection(sectionId) {
     if (sectionId === 'pesanan') fetchOrders();
     if (sectionId === 'tukar-poin') fetchTukarPoin();
     if (sectionId === 'user-points') fetchUserPoints();
-    if (sectionId === 'dashboard') updateDashboardStats();
+    if (sectionId === 'dashboard') {
+        updateDashboardStats();
+        loadStoreStatus();
+    }
     if (sectionId === 'pengaturan') loadSettings();
 }
 
 // ============ DASHBOARD FUNCTIONS ============
+function loadStoreStatus() {
+    const isClosed = CONFIG.isStoreClosed();
+    const toggle = document.getElementById('store-closed-toggle');
+    const label = document.getElementById('store-status-label');
+    
+    if (toggle && label) {
+        toggle.checked = isClosed;
+        if (isClosed) {
+            label.innerText = 'TOKO TUTUP';
+            label.className = 'text-sm font-bold px-3 py-1 rounded-full bg-red-100 text-red-700';
+        } else {
+            label.innerText = 'TOKO BUKA';
+            label.className = 'text-sm font-bold px-3 py-1 rounded-full bg-green-100 text-green-700';
+        }
+    }
+}
+
+function toggleStoreStatus() {
+    const toggle = document.getElementById('store-closed-toggle');
+    const isClosed = toggle.checked;
+    CONFIG.setStoreClosed(isClosed);
+    loadStoreStatus();
+    showAdminToast(isClosed ? 'Toko sekarang TUTUP' : 'Toko sekarang BUKA', isClosed ? 'warning' : 'success');
+}
+
 async function updateDashboardStats() {
     try {
         const [prodRes, orderRes] = await Promise.all([

@@ -9,8 +9,16 @@
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body class="bg-gray-50">
+    <!-- Store Closed Banner -->
+    <div id="store-closed-banner" class="hidden bg-red-600 text-white py-2 px-4 text-center text-sm font-bold sticky top-0 z-50">
+        <div class="container mx-auto flex justify-center items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <span>🔴 Toko Sedang Tutup - Anda tetap dapat melihat produk</span>
+        </div>
+    </div>
+
     <!-- Header -->
-    <header class="bg-green-700 text-white py-6 shadow-md sticky top-0 z-40">
+    <header class="bg-green-700 text-white py-6 shadow-md sticky top-[36px] z-40" id="main-header">
         <div class="container mx-auto px-4 flex justify-between items-center">
             <h1 class="text-2xl font-bold">Harapan Jaya</h1>
             <div class="flex items-center gap-4">
@@ -68,6 +76,45 @@
             </div>
         </div>
     </section>
+
+    <!-- Store Closed Info Modal -->
+    <div id="store-closed-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-[60]">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-8 text-center">
+            <div class="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">Toko Sedang Tutup</h3>
+            <p class="text-gray-600 mb-8">
+                Mohon maaf, saat ini kami sedang tidak menerima pesanan. 
+                Anda tetap dapat melihat katalog produk kami. 
+                Pesanan yang masuk akan diproses setelah toko kembali buka.
+            </p>
+            <button onclick="closeStoreClosedModal()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl transition shadow-lg shadow-green-100">
+                Saya Mengerti
+            </button>
+        </div>
+    </div>
+
+    <!-- Store Closed Warning Modal (Transaction) -->
+    <div id="store-warning-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-[60]">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-8 text-center">
+            <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Lanjutkan Pesanan?</h3>
+            <p class="text-sm text-gray-600 mb-8">
+                Toko sedang tutup. Pesanan Anda akan kami terima, namun baru akan diproses saat toko kembali beroperasi.
+            </p>
+            <div class="flex gap-3">
+                <button onclick="closeStoreWarningModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition">
+                    Batal
+                </button>
+                <button id="confirm-store-warning" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition">
+                    Lanjutkan
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal Rincian -->
     <div id="detail-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">

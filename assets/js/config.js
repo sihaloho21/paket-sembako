@@ -16,7 +16,8 @@ const CONFIG = {
         MAIN_API: 'sembako_main_api_url',
         ADMIN_API: 'sembako_admin_api_url',
         GAJIAN_CONFIG: 'sembako_gajian_config',
-        REWARD_CONFIG: 'sembako_reward_config'
+        REWARD_CONFIG: 'sembako_reward_config',
+        STORE_CLOSED: 'sembako_store_closed'
     },
     
     /**
@@ -139,6 +140,22 @@ const CONFIG = {
     },
 
     /**
+     * Mendapatkan status toko (tutup/buka)
+     * @returns {boolean} true jika toko tutup
+     */
+    isStoreClosed() {
+        return localStorage.getItem(this.STORAGE_KEYS.STORE_CLOSED) === 'true';
+    },
+
+    /**
+     * Mengatur status toko
+     * @param {boolean} closed - true untuk menutup toko
+     */
+    setStoreClosed(closed) {
+        localStorage.setItem(this.STORAGE_KEYS.STORE_CLOSED, closed ? 'true' : 'false');
+    },
+
+    /**
      * Mendapatkan semua konfigurasi saat ini
      * @returns {object} Objek berisi semua konfigurasi
      */
@@ -147,7 +164,8 @@ const CONFIG = {
             mainApi: this.getMainApiUrl(),
             adminApi: this.getAdminApiUrl(),
             gajian: this.getGajianConfig(),
-            reward: this.getRewardConfig()
+            reward: this.getRewardConfig(),
+            storeClosed: this.isStoreClosed()
         };
     }
 };

@@ -83,10 +83,25 @@
                         <p class="text-sm text-gray-500 font-medium">Stok Menipis</p>
                         <h3 id="stat-stok-menipis" class="text-3xl font-bold text-red-600 mt-1">0</h3>
                     </div>
-                </div>
-                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                    <h4 class="font-bold text-gray-800 mb-4">Aktivitas Terbaru</h4>
-                    <p class="text-gray-500 text-sm">Belum ada aktivitas terbaru.</p>
+                                <!-- Store Status Toggle -->
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-bold text-gray-800">Status Operasional Toko</h4>
+                                <p class="text-sm text-gray-500">Kontrol apakah toko sedang buka atau tutup untuk menerima pesanan.</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span id="store-status-label" class="text-sm font-bold px-3 py-1 rounded-full">Memuat...</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="store-closed-toggle" class="sr-only peer" onchange="toggleStoreStatus()">
+                                    <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-red-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                        <h4 class="font-bold text-gray-800 mb-6">Konfigurasi Bayar Gajian</h4>                 <p class="text-gray-500 text-sm">Belum ada aktivitas terbaru.</p>
                 </div>
             </section>
 

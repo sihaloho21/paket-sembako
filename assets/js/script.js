@@ -2,6 +2,7 @@ let API_URL = CONFIG.getMainApiUrl();
 let cart = JSON.parse(localStorage.getItem('sembako_cart')) || [];
 let allProducts = [];
 let currentCategory = 'Semua';
+let storeClosed = CONFIG.isStoreClosed();
 
 // calculateGajianPrice is now handled in assets/js/payment-logic.js
 
@@ -36,6 +37,7 @@ async function fetchProducts() {
         });
         renderProducts(allProducts);
         updateCartUI();
+        checkStoreStatus();
         startNotificationLoop();
     } catch (error) {
         console.error('Error fetching products:', error);
@@ -136,6 +138,16 @@ function setCategory(cat) {
 }
 
 function addToCart(p, event) {
+    if (storeClosed) {
+        showStoreWarning(() => {
+            proceedAddToCart(p, event);
+        });
+        return;
+    }
+    proceedAddToCart(p, event);
+}
+
+function proceedAddToCart(p, event) {
     const existing = cart.find(item => item.nama === p.nama);
     if (existing) {
         existing.qty += 1;
@@ -374,6 +386,16 @@ function closeDetailModal() {
 }
 
 function directOrder(p) {
+    if (storeClosed) {
+        showStoreWarning(() => {
+            proceedDirectOrder(p);
+        });
+        return;
+    }
+    proceedDirectOrder(p);
+}
+
+function proceedDirectOrder(p) {
     cart = [{ ...p, qty: 1 }];
     saveCart();
     updateCartUI();
@@ -387,6 +409,50 @@ function directOrderFromModal() {
         directOrder(product);
         closeDetailModal();
     }
+}
+
+// ============ STORE CLOSED LOGIC ============
+function checkStoreStatus() {
+    storeClosed = CONFIG.isStoreClosed();
+    const banner = document.getElementById('store-closed-banner');
+    const header = document.getElementById('main-header');
+    
+    if (storeClosed) {
+        if (banner) banner.classList.remove('hidden');
+        if (header) header.style.top = '36px';
+        
+        // Show modal only once per session
+        if (!sessionStorage.getItem('store_closed_modal_shown')) {
+            setTimeout(() => {
+                document.getElementById('store-closed-modal').classList.remove('hidden');
+                sessionStorage.setItem('store_closed_modal_shown', 'true');
+            }, 1000);
+        }
+    } else {
+        if (banner) banner.classList.add('hidden');
+        if (header) header.style.top = '0';
+    }
+}
+
+function closeStoreClosedModal() {
+    document.getElementById('store-closed-modal').classList.add('hidden');
+}
+
+function showStoreWarning(onConfirm) {
+    const modal = document.getElementById('store-warning-modal');
+    const confirmBtn = document.getElementById('confirm-store-warning');
+    
+    modal.classList.remove('hidden');
+    
+    // Use a new function to avoid multiple event listeners
+    confirmBtn.onclick = () => {
+        modal.classList.add('hidden');
+        if (onConfirm) onConfirm();
+    };
+}
+
+function closeStoreWarningModal() {
+    document.getElementById('store-warning-modal').classList.add('hidden');
 }
 
 function openOrderModal() {
