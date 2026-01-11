@@ -672,6 +672,7 @@ function saveSettings() {
     const adminApi = document.getElementById('settings-admin-api').value;
     CONFIG.setMainApiUrl(mainApi);
     CONFIG.setAdminApiUrl(adminApi);
+    API_URL = adminApi; // Update local variable immediately
     
     const targetDay = parseInt(document.getElementById('gajian-target-day').value);
     const defaultMarkup = parseFloat(document.getElementById('gajian-default-markup').value) / 100;
