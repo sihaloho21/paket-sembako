@@ -410,6 +410,7 @@ function openAddModal() {
     document.getElementById('modal-title').innerText = 'Tambah Produk';
     document.getElementById('product-id').value = '';
     document.getElementById('product-form').reset();
+    document.getElementById('variants-container').innerHTML = '';
     document.getElementById('product-modal').classList.remove('hidden');
 }
 
@@ -431,6 +432,9 @@ function openEditModal(id) {
     document.getElementById('form-gambar-2').value = images[1] || '';
     document.getElementById('form-gambar-3').value = images[2] || '';
 
+    // Load variants
+    loadVariants(p.variasi);
+
     document.getElementById('product-modal').classList.remove('hidden');
 }
 
@@ -451,6 +455,9 @@ document.getElementById('product-form').addEventListener('submit', async (e) => 
         document.getElementById('form-gambar-3').value
     ].filter(url => url.trim() !== '').join(',');
 
+    const variantsData = collectVariants();
+    const variantsJson = variantsData.length > 0 ? JSON.stringify(variantsData) : '';
+
     const data = {
         nama: document.getElementById('form-nama').value,
         harga: document.getElementById('form-harga').value,
@@ -458,7 +465,8 @@ document.getElementById('product-form').addEventListener('submit', async (e) => 
         stok: document.getElementById('form-stok').value,
         kategori: document.getElementById('form-category').value,
         deskripsi: document.getElementById('form-deskripsi').value,
-        gambar: images
+        gambar: images,
+        variasi: variantsJson
     };
 
     try {
@@ -831,3 +839,133 @@ function showAdminToast(message, type = 'info') {
 document.addEventListener('DOMContentLoaded', () => {
     showSection('dashboard');
 });
+
+// ============ VARIANT MANAGEMENT FUNCTIONS ============
+
+/**
+ * Load variants from JSON string and render them in the form
+ */
+function loadVariants(variantsJson) {
+    const container = document.getElementById('variants-container');
+    container.innerHTML = '';
+    
+    if (!variantsJson) return;
+    
+    try {
+        const variants = JSON.parse(variantsJson);
+        if (Array.isArray(variants) && variants.length > 0) {
+            variants.forEach((variant, index) => {
+                renderVariantRow(variant, index);
+            });
+        }
+    } catch (e) {
+        console.error('Error parsing variants:', e);
+    }
+}
+
+/**
+ * Render a single variant row in the form
+ */
+function renderVariantRow(variant, index) {
+    const container = document.getElementById('variants-container');
+    const row = document.createElement('div');
+    row.className = 'bg-white p-4 rounded-lg border border-gray-200 variant-row';
+    row.dataset.index = index;
+    
+    const hargaCoret = variant.harga_coret || '';
+    const gambar = variant.gambar || '';
+    const grosir = variant.grosir || '';
+    
+    row.innerHTML = `
+        <div class="grid grid-cols-2 gap-3 mb-3">
+            <div>
+                <label class="text-xs font-bold text-gray-600">SKU</label>
+                <input type="text" class="variant-sku w-full p-2 border rounded text-sm" value="${variant.sku || ''}" placeholder="MG-1L" required>
+            </div>
+            <div>
+                <label class="text-xs font-bold text-gray-600">Nama Varian</label>
+                <input type="text" class="variant-nama w-full p-2 border rounded text-sm" value="${variant.nama || ''}" placeholder="1 Liter" required>
+            </div>
+            <div>
+                <label class="text-xs font-bold text-gray-600">Harga (Rp)</label>
+                <input type="number" class="variant-harga w-full p-2 border rounded text-sm" value="${variant.harga || ''}" placeholder="15000" required>
+            </div>
+            <div>
+                <label class="text-xs font-bold text-gray-600">Harga Coret (Rp)</label>
+                <input type="number" class="variant-harga-coret w-full p-2 border rounded text-sm" value="${hargaCoret}" placeholder="16000">
+            </div>
+            <div>
+                <label class="text-xs font-bold text-gray-600">Stok</label>
+                <input type="number" class="variant-stok w-full p-2 border rounded text-sm" value="${variant.stok || ''}" placeholder="10" required>
+            </div>
+            <div>
+                <label class="text-xs font-bold text-gray-600">URL Gambar</label>
+                <input type="text" class="variant-gambar w-full p-2 border rounded text-sm" value="${gambar}" placeholder="https://example.com/oil-1l.webp">
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="text-xs font-bold text-gray-600">Harga Grosir (JSON)</label>
+            <textarea class="variant-grosir w-full p-2 border rounded text-xs" rows="2" placeholder='[{"min_qty":5,"price":14000}]'>${grosir}</textarea>
+        </div>
+        <div class="flex justify-end">
+            <button type="button" onclick="removeVariantRow(this)" class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded text-sm font-bold transition">
+                Hapus Varian
+            </button>
+        </div>
+    `;
+    
+    container.appendChild(row);
+}
+
+/**
+ * Add a new empty variant row
+ */
+function addVariantRow() {
+    const container = document.getElementById('variants-container');
+    const index = container.children.length;
+    renderVariantRow({}, index);
+}
+
+/**
+ * Remove a variant row
+ */
+function removeVariantRow(button) {
+    button.closest('.variant-row').remove();
+}
+
+/**
+ * Collect all variant data from the form
+ */
+function collectVariants() {
+    const rows = document.querySelectorAll('.variant-row');
+    const variants = [];
+    
+    rows.forEach(row => {
+        const sku = row.querySelector('.variant-sku').value.trim();
+        const nama = row.querySelector('.variant-nama').value.trim();
+        const harga = row.querySelector('.variant-harga').value.trim();
+        const hargaCoret = row.querySelector('.variant-harga-coret').value.trim();
+        const stok = row.querySelector('.variant-stok').value.trim();
+        const gambar = row.querySelector('.variant-gambar').value.trim();
+        const grosir = row.querySelector('.variant-grosir').value.trim();
+        
+        // Only add if at least SKU, nama, harga, and stok are filled
+        if (sku && nama && harga && stok) {
+            const variant = {
+                sku: sku,
+                nama: nama,
+                harga: parseInt(harga),
+                stok: parseInt(stok)
+            };
+            
+            if (hargaCoret) variant.harga_coret = parseInt(hargaCoret);
+            if (gambar) variant.gambar = gambar;
+            if (grosir) variant.grosir = grosir;
+            
+            variants.push(variant);
+        }
+    });
+    
+    return variants;
+}
+
