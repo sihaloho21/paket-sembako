@@ -3,6 +3,7 @@ let cart = JSON.parse(localStorage.getItem('sembako_cart')) || [];
 let allProducts = [];
 let currentCategory = 'Semua';
 let storeClosed = CONFIG.isStoreClosed();
+let selectedVariation = null;
 
 // calculateGajianPrice is now handled in assets/js/payment-logic.js
 
@@ -26,6 +27,16 @@ async function fetchProducts() {
             
             const defaultDesc = "Kualitas Terjamin, Stok Selalu Baru, Harga Kompetitif";
             
+            // Phase 1 & 2: Parse variations
+            let variations = [];
+            if (p.variasi) {
+                try {
+                    variations = JSON.parse(p.variasi);
+                } catch (e) {
+                    console.error('Error parsing variations for product:', p.id, e);
+                }
+            }
+
             return {
                 ...p,
                 harga: cashPrice,
@@ -33,7 +44,8 @@ async function fetchProducts() {
                 hargaGajian: gajianInfo.price,
                 stok: parseInt(p.stok) || 0,
                 category: category,
-                deskripsi: (p.deskripsi && p.deskripsi.trim() !== "") ? p.deskripsi : defaultDesc
+                deskripsi: (p.deskripsi && p.deskripsi.trim() !== "") ? p.deskripsi : defaultDesc,
+                variations: variations
             };
         });
         renderProducts(allProducts);
@@ -112,6 +124,8 @@ function renderProducts(products) {
             `;
         }
 
+        const hasVariations = p.variations && p.variations.length > 0;
+
         grid.innerHTML += `
             <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition duration-300 relative">
                 <div class="absolute top-3 left-3 z-10 flex flex-col gap-2">
@@ -155,10 +169,17 @@ function renderProducts(products) {
                         </div>
                     </div>
                     ${grosirGridHtml}
+                    ${hasVariations ? `
+                    <button onclick='showDetail(${pData})' class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 mb-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                        Pilih Variasi
+                    </button>
+                    ` : `
                     <button onclick='addToCart(${pData}, event)' ${p.stok === 0 ? 'disabled' : ''} class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 mb-3">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         Tambah ke Keranjang
                     </button>
+                    `}
                     <div class="grid grid-cols-2 gap-2">
                         <button onclick='showDetail(${pData})' class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2 rounded-lg text-sm transition">Rincian</button>
                         <button onclick='directOrder(${pData})' ${p.stok === 0 ? 'disabled' : ''} class="bg-green-100 hover:bg-green-200 text-green-700 font-bold py-2 rounded-lg text-sm transition">Beli Sekarang</button>
@@ -173,9 +194,10 @@ function renderProducts(products) {
 function filterProducts() {
     const query = document.getElementById('search-input').value.toLowerCase();
     const filtered = allProducts.filter(p => {
-        const matchSearch = p.nama.toLowerCase().includes(query);
-        const matchCategory = currentCategory === 'Semua' || p.category === currentCategory;
-        return matchSearch && matchCategory;
+        const matchesSearch = p.nama.toLowerCase().includes(query) || 
+                            (p.deskripsi && p.deskripsi.toLowerCase().includes(query));
+        const matchesCategory = currentCategory === 'Semua' || p.category === currentCategory;
+        return matchesSearch && matchesCategory;
     });
     renderProducts(filtered);
 }
@@ -200,15 +222,42 @@ function addToCart(p, event) {
 }
 
 function proceedAddToCart(p, event) {
-    const existing = cart.find(item => item.nama === p.nama);
+    // If product has variations and none selected, show detail
+    if (p.variations && p.variations.length > 0 && !selectedVariation) {
+        showDetail(p);
+        return;
+    }
+
+    const itemToAdd = { ...p };
+    if (selectedVariation) {
+        itemToAdd.selectedVariation = selectedVariation;
+        itemToAdd.harga = selectedVariation.harga;
+        itemToAdd.sku = selectedVariation.sku;
+        itemToAdd.stok = selectedVariation.stok;
+        // Recalculate gajian price for variation
+        const gajianInfo = calculateGajianPrice(selectedVariation.harga);
+        itemToAdd.hargaGajian = gajianInfo.price;
+    }
+
+    const existing = cart.find(item => {
+        const sameId = item.id === itemToAdd.id;
+        const sameVariation = (!item.selectedVariation && !itemToAdd.selectedVariation) || 
+                             (item.selectedVariation && itemToAdd.selectedVariation && item.selectedVariation.sku === itemToAdd.selectedVariation.sku);
+        return sameId && sameVariation;
+    });
+
     if (existing) {
         existing.qty += 1;
     } else {
-        cart.push({ ...p, qty: 1 });
+        cart.push({ ...itemToAdd, qty: 1 });
     }
+    
     saveCart();
     updateCartUI();
     
+    // Reset selected variation after adding to cart
+    selectedVariation = null;
+
     // Fly to cart animation
     if (event && event.currentTarget) {
         const btn = event.currentTarget;
@@ -257,7 +306,7 @@ function proceedAddToCart(p, event) {
     }
 
     // Show Toast
-    showToast(`${p.nama} ditambahkan ke keranjang`);
+    showToast(`${itemToAdd.nama}${itemToAdd.selectedVariation ? ' (' + itemToAdd.selectedVariation.nama + ')' : ''} ditambahkan ke keranjang`);
 }
 
 function showToast(message) {
@@ -326,7 +375,7 @@ function updateCartUI() {
                 <div class="flex items-center gap-4 bg-gray-50 p-3 rounded-xl">
                     <img src="${mainImage}" class="w-16 h-16 object-cover rounded-lg">
                     <div class="flex-1">
-                        <h5 class="font-bold text-gray-800 text-sm">${item.nama}</h5>
+                        <h5 class="font-bold text-gray-800 text-sm">${item.nama}${item.selectedVariation ? ' (' + item.selectedVariation.nama + ')' : ''}</h5>
                         <div class="flex flex-col">
                             ${isGrosir ? `<span class="text-[10px] text-gray-400 line-through">Rp ${item.harga.toLocaleString('id-ID')}</span>` : ''}
                             <p class="text-green-600 font-bold text-xs">Rp ${effectivePrice.toLocaleString('id-ID')} ${isGrosir ? '<span class="bg-green-100 text-green-700 text-[8px] px-1 rounded ml-1">Grosir</span>' : ''}</p>
@@ -383,6 +432,9 @@ function showDetail(p) {
     const modal = document.getElementById('detail-modal');
     if (!modal) return;
 
+    // Reset selected variation when opening modal
+    selectedVariation = null;
+
     const nameEl = document.getElementById('modal-product-name');
     const imageEl = document.getElementById('modal-product-image');
     const cashPriceEl = document.getElementById('modal-cash-price');
@@ -392,111 +444,45 @@ function showDetail(p) {
     const badgesEl = document.getElementById('modal-badges');
     const savingsHighlight = document.getElementById('savings-highlight');
     const savingsAmount = document.getElementById('savings-amount');
+    const variationContainer = document.getElementById('modal-variation-container');
 
     if (nameEl) nameEl.innerText = p.nama;
-    if (cashPriceEl) {
-        let hargaHtml = `Rp ${p.harga.toLocaleString('id-ID')}`;
-        if (p.hargaCoret > p.harga) {
-            const diskon = Math.round(((p.hargaCoret - p.harga) / p.hargaCoret) * 100);
-            hargaHtml = `
-                <div class="flex flex-col">
-                    <div class="flex items-center gap-2">
-                        <span class="text-sm text-gray-400 line-through">Rp ${p.hargaCoret.toLocaleString('id-ID')}</span>
-                        <span class="bg-red-100 text-red-600 text-[10px] px-2 py-0.5 rounded-md font-bold">-${diskon}%</span>
-                    </div>
-                    <span class="text-2xl font-black text-green-700">Rp ${p.harga.toLocaleString('id-ID')}</span>
-                </div>
-            `;
-            cashPriceEl.innerHTML = hargaHtml;
-        } else {
-            cashPriceEl.innerText = hargaHtml;
-            cashPriceEl.className = "text-2xl font-black text-green-700";
-        }
-    }
-    if (gajianPriceEl) gajianPriceEl.innerText = `Rp ${p.hargaGajian.toLocaleString('id-ID')}`;
-    if (priceDateEl) {
-        const today = new Date().toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}).replace(/\//g, '-');
-        priceDateEl.innerText = `Harga Per Tgl ${today}`;
-    }
     
-    if (badgesEl) {
-        const rewardPoints = calculateRewardPoints(p.harga, p.nama);
-        badgesEl.innerHTML = `
-            <span class="bg-green-100 text-green-700 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wider">${p.category}</span>
-            <span class="bg-amber-100 text-amber-700 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wider flex items-center gap-1">
-                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                +${rewardPoints} Poin Reward
-            </span>
-        `;
-    }
-
-    // Render Tiered Pricing UI
-    const tieredPricingUI = document.getElementById('tiered-pricing-ui');
-    const priceTiersTable = document.getElementById('price-tiers-table');
-    const currentTierBadge = document.getElementById('current-tier-badge');
-    const progressContainer = document.getElementById('tier-progress-container');
-    const progressBar = document.getElementById('tier-progress-bar');
-    const progressText = document.getElementById('tier-progress-text');
-    const progressPercent = document.getElementById('tier-progress-percent');
-
-    if (tieredPricingUI && priceTiersTable) {
-        let tiers = [];
-        if (p.grosir) {
-            try {
-                tiers = typeof p.grosir === 'string' ? JSON.parse(p.grosir) : p.grosir;
-            } catch (e) {
-                console.error('Error parsing grosir data', e);
-            }
-        }
-
-        if (Array.isArray(tiers) && tiers.length > 0) {
-            tieredPricingUI.classList.remove('hidden');
+    // Handle Variations UI
+    if (variationContainer) {
+        if (p.variations && p.variations.length > 0) {
+            variationContainer.classList.remove('hidden');
+            const variationList = document.getElementById('modal-variation-list');
+            variationList.innerHTML = p.variations.map((v, idx) => `
+                <button onclick='selectVariation(${JSON.stringify(v).replace(/"/g, '&quot;')}, ${idx})' class="variation-btn border-2 border-gray-200 rounded-xl p-3 text-left transition hover:border-green-500 focus:outline-none" data-index="${idx}">
+                    <p class="text-xs font-bold text-gray-800">${v.nama}</p>
+                    <p class="text-[10px] text-green-600 font-bold">Rp ${v.harga.toLocaleString('id-ID')}</p>
+                    ${v.stok <= 0 ? '<p class="text-[8px] text-red-500 font-bold">Stok Habis</p>' : ''}
+                </button>
+            `).join('');
             
-            // Sort tiers by min_qty ascending for display
-            const sortedTiers = [...tiers].sort((a, b) => a.min_qty - b.min_qty);
-            
-            // Check if product is already in cart to show progress
-            const cartItem = cart.find(item => item.nama === p.nama);
-            const currentQty = cartItem ? cartItem.qty : 0;
-            
-            // Render Tiers Table
-            priceTiersTable.innerHTML = sortedTiers.map(tier => {
-                const isActive = currentQty >= tier.min_qty;
-                return `
-                    <div class="p-2 rounded-xl border-2 ${isActive ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-blue-100 text-blue-800'} text-center transition-all duration-300">
-                        <p class="text-[8px] font-bold uppercase opacity-80">Min. ${tier.min_qty}</p>
-                        <p class="text-xs font-black">Rp ${tier.price.toLocaleString('id-ID')}</p>
-                    </div>
-                `;
-            }).join('');
-
-            // Update Progress Bar
-            const nextTier = getNextTierInfo(currentQty, tiers);
-            if (nextTier) {
-                progressContainer.classList.remove('hidden');
-                const prevMinQty = sortedTiers.find((t, i) => sortedTiers[i+1] && sortedTiers[i+1].min_qty === nextTier.min_qty)?.min_qty || 0;
-                const range = nextTier.min_qty - prevMinQty;
-                const progress = Math.min(100, Math.max(0, ((currentQty - prevMinQty) / range) * 100));
-                
-                progressBar.style.width = `${progress}%`;
-                progressPercent.innerText = `${Math.round(progress)}%`;
-                progressText.innerHTML = `Beli <span class="font-bold">${nextTier.min_qty - currentQty} lagi</span> untuk harga Rp ${nextTier.price.toLocaleString('id-ID')}!`;
-                currentTierBadge.classList.add('hidden');
-            } else {
-                // Max tier reached
-                progressContainer.classList.add('hidden');
-                currentTierBadge.classList.remove('hidden');
-                currentTierBadge.innerText = 'Harga Terbaik Aktif! 🎉';
-            }
+            // Select first variation by default
+            selectVariation(p.variations[0], 0);
         } else {
-            tieredPricingUI.classList.add('hidden');
+            variationContainer.classList.add('hidden');
+            updateModalPrices(p.harga, p.hargaGajian, p.hargaCoret);
         }
+    } else {
+        updateModalPrices(p.harga, p.hargaGajian, p.hargaCoret);
     }
 
-    if (savingsHighlight && savingsAmount) {
-        const savings = Math.round(p.harga * 0.15); // Example savings calculation
-        savingsAmount.innerText = `Rp ${savings.toLocaleString('id-ID')}`;
-        savingsHighlight.classList.remove('hidden');
+    if (priceDateEl) {
+        priceDateEl.innerText = `Harga Per Tgl ${new Date().toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}).replace(/\//g, '-')}`;
+    }
+
+    if (badgesEl) {
+        badgesEl.innerHTML = `
+            <span class="bg-green-100 text-green-700 text-[10px] px-2.5 py-1 rounded-lg font-bold">${p.category}</span>
+            ${p.stok > 0 ? 
+                `<span class="bg-blue-100 text-blue-700 text-[10px] px-2.5 py-1 rounded-lg font-bold">Stok: ${p.stok}</span>` : 
+                `<span class="bg-red-100 text-red-700 text-[10px] px-2.5 py-1 rounded-lg font-bold">Stok Habis</span>`
+            }
+        `;
     }
 
     // Initialize Image Slider
@@ -519,8 +505,56 @@ function showDetail(p) {
         `).join('');
     }
 
+    // Tiered Pricing Logic in Modal
+    if (typeof updateTieredPricingUI === 'function') {
+        updateTieredPricingUI(p);
+    }
+
     modal.classList.remove('hidden');
     document.body.classList.add('modal-active');
+}
+
+function selectVariation(v, index) {
+    selectedVariation = v;
+    
+    // Update UI for selected button
+    document.querySelectorAll('.variation-btn').forEach((btn, i) => {
+        if (i === index) {
+            btn.classList.add('border-green-500', 'bg-green-50');
+            btn.classList.remove('border-gray-200');
+        } else {
+            btn.classList.remove('border-green-500', 'bg-green-50');
+            btn.classList.add('border-gray-200');
+        }
+    });
+
+    // Update prices based on variation
+    const gajianInfo = calculateGajianPrice(v.harga);
+    updateModalPrices(v.harga, gajianInfo.price, v.harga_coret || 0);
+    
+    // Update image if variation has one
+    if (v.gambar) {
+        const imageEl = document.getElementById('modal-product-image');
+        if (imageEl) imageEl.src = v.gambar;
+        // If slider exists, we might want to update it too, but for now just the main image
+    }
+}
+
+function updateModalPrices(cash, gajian, coret) {
+    const cashPriceEl = document.getElementById('modal-cash-price');
+    const gajianPriceEl = document.getElementById('modal-gajian-price');
+    const savingsHighlight = document.getElementById('savings-highlight');
+    const savingsAmount = document.getElementById('savings-amount');
+
+    if (cashPriceEl) cashPriceEl.innerText = `Rp ${cash.toLocaleString('id-ID')}`;
+    if (gajianPriceEl) gajianPriceEl.innerText = `Rp ${gajian.toLocaleString('id-ID')}`;
+
+    if (coret > cash) {
+        if (savingsHighlight) savingsHighlight.classList.remove('hidden');
+        if (savingsAmount) savingsAmount.innerText = `Rp ${(coret - cash).toLocaleString('id-ID')}`;
+    } else {
+        if (savingsHighlight) savingsHighlight.classList.add('hidden');
+    }
 }
 
 function closeDetailModal() {
@@ -529,6 +563,7 @@ function closeDetailModal() {
         modal.classList.add('hidden');
         document.body.classList.remove('modal-active');
     }
+    selectedVariation = null;
 }
 
 function directOrder(p) {
@@ -542,10 +577,27 @@ function directOrder(p) {
 }
 
 function proceedDirectOrder(p) {
-    cart = [{ ...p, qty: 1 }];
+    // If product has variations and none selected, show detail
+    if (p.variations && p.variations.length > 0 && !selectedVariation) {
+        showDetail(p);
+        return;
+    }
+
+    const itemToAdd = { ...p };
+    if (selectedVariation) {
+        itemToAdd.selectedVariation = selectedVariation;
+        itemToAdd.harga = selectedVariation.harga;
+        itemToAdd.sku = selectedVariation.sku;
+        itemToAdd.stok = selectedVariation.stok;
+        const gajianInfo = calculateGajianPrice(selectedVariation.harga);
+        itemToAdd.hargaGajian = gajianInfo.price;
+    }
+
+    cart = [{ ...itemToAdd, qty: 1 }];
     saveCart();
     updateCartUI();
     openOrderModal();
+    selectedVariation = null;
 }
 
 function directOrderFromModal() {
@@ -621,7 +673,7 @@ function openOrderModal() {
             return `
                 <div class="flex justify-between items-center py-1">
                     <div class="flex flex-col">
-                        <span class="font-medium">${item.nama} (x${item.qty})</span>
+                        <span class="font-medium">${item.nama}${item.selectedVariation ? ' (' + item.selectedVariation.nama + ')' : ''} (x${item.qty})</span>
                         <span class="text-[10px] text-amber-600 font-bold flex items-center gap-1">
                             <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
                             +${itemPoints.toFixed(1)} Poin
@@ -719,503 +771,127 @@ function toggleLocationField() {
     const pickupUI = document.getElementById('pickup-location-ui');
     
     if (shipEl) {
-        if (locationField) locationField.classList.remove('hidden');
-        if (shipEl.value === 'Diantar Kerumah') {
-            if (deliveryUI) deliveryUI.classList.remove('hidden');
-            if (pickupUI) pickupUI.classList.add('hidden');
-        } else if (shipEl.value === 'Ambil Ditempat') {
-            if (deliveryUI) deliveryUI.classList.add('hidden');
-            if (pickupUI) pickupUI.classList.remove('hidden');
-            const locLink = document.getElementById('location-link');
-            if (locLink) locLink.value = "https://maps.app.goo.gl/JExkrRvR5PBah9oaA";
+        if (shipEl.value === 'Antar Nikomas') {
+            locationField.classList.remove('hidden');
+            deliveryUI.classList.remove('hidden');
+            pickupUI.classList.add('hidden');
         } else {
-            if (locationField) locationField.classList.add('hidden');
-            const locLink = document.getElementById('location-link');
-            if (locLink) locLink.value = "";
+            locationField.classList.remove('hidden');
+            deliveryUI.classList.add('hidden');
+            pickupUI.classList.remove('hidden');
         }
-    } else {
-        if (locationField) locationField.classList.add('hidden');
     }
-}
-
-function getCurrentLocation() {
-    const btn = document.getElementById('get-location-btn');
-    const originalText = '<span>📍 Bagikan Lokasi Saya</span>';
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span>⌛ Mencari Lokasi...</span>';
-    }
-
-    if (!navigator.geolocation) {
-        alert("Geolocation tidak didukung oleh browser Anda.");
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        }
-        return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            const mapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
-            const locLink = document.getElementById('location-link');
-            if (locLink) locLink.value = mapsUrl;
-            if (btn) {
-                btn.disabled = false;
-                btn.classList.remove('bg-blue-50', 'text-blue-700', 'border-blue-200');
-                btn.classList.add('bg-green-50', 'text-green-700', 'border-green-200');
-                btn.innerHTML = '<span>✅ Lokasi Berhasil Dibagikan</span>';
-            }
-        },
-        (error) => {
-            let msg = "Gagal mengambil lokasi.";
-            if (error.code === 1) msg = "Izin lokasi ditolak. Silakan aktifkan izin lokasi di browser Anda.";
-            alert(msg);
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
+    updateOrderTotal();
 }
 
 function updateOrderTotal() {
     const payEl = document.querySelector('input[name="pay-method"]:checked');
-    const isGajian = payEl && payEl.value === 'Bayar Gajian';
-    
-    const total = cart.reduce((sum, item) => {
-        // Use tiered price as base for cash/QRIS, or apply gajian markup on tiered price
-        const tieredPrice = calculateTieredPrice(item.harga, item.qty, item.grosir);
-        const price = isGajian ? calculateGajianPrice(tieredPrice).price : tieredPrice;
-        return sum + (price * item.qty);
-    }, 0);
-    
-    const finalTotalEl = document.getElementById('order-final-total');
-    if (finalTotalEl) finalTotalEl.innerText = `Rp ${total.toLocaleString('id-ID')}`;
-    
-    const stickyTotalEl = document.getElementById('sticky-order-total');
-    if (stickyTotalEl) stickyTotalEl.innerText = `Rp ${total.toLocaleString('id-ID')}`;
-
-    // Also update summary if modal is open
-    const summaryEl = document.getElementById('order-summary');
-    if (summaryEl && document.getElementById('order-modal').classList.contains('hidden') === false) {
-        let totalPoints = 0;
-        summaryEl.innerHTML = cart.map(item => {
-            const tieredPrice = calculateTieredPrice(item.harga, item.qty, item.grosir);
-            const price = isGajian ? calculateGajianPrice(tieredPrice).price : tieredPrice;
-            const isGrosir = tieredPrice < item.harga;
-            
-            // Points are always calculated based on the base cash price for fairness
-            const itemPoints = calculateRewardPoints(tieredPrice, item.nama) * item.qty;
-            totalPoints += itemPoints;
-            return `
-                <div class="flex justify-between items-center py-1">
-                    <div class="flex flex-col">
-                        <span class="font-medium">${item.nama} (x${item.qty})</span>
-                        <div class="flex items-center gap-2">
-                            <span class="text-[10px] text-amber-600 font-bold flex items-center gap-1">
-                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                +${itemPoints.toFixed(1)} Poin
-                            </span>
-                            ${isGrosir ? '<span class="bg-green-100 text-green-700 text-[8px] px-1 rounded font-bold">Harga Grosir</span>' : ''}
-                        </div>
-                    </div>
-                    <span class="font-bold">Rp ${(price * item.qty).toLocaleString('id-ID')}</span>
-                </div>
-            `;
-        }).join('');
-
-        // Add total points to summary
-        summaryEl.innerHTML += `
-            <div class="border-t border-dashed border-gray-200 mt-2 pt-2 flex justify-between items-center">
-                <span class="text-xs font-bold text-amber-700">Total Poin Didapat:</span>
-                <span class="text-sm font-black text-amber-700 flex items-center gap-1">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                    ${totalPoints.toFixed(1)} Poin
-                </span>
-            </div>
-        `;
-    }
-}
-
-function showQRISModal() {
-    const modal = document.getElementById('qris-modal');
-    if (modal) modal.classList.remove('hidden');
-}
-
-function closeQRISModal() {
-    const modal = document.getElementById('qris-modal');
-    if (modal) modal.classList.add('hidden');
-}
-
-function sendToWA() {
-    const name = document.getElementById('customer-name').value.trim();
     const shipEl = document.querySelector('input[name="ship-method"]:checked');
-    const payEl = document.querySelector('input[name="pay-method"]:checked');
-    const locationLink = document.getElementById('location-link').value.trim();
-
-    if (!shipEl || !payEl) {
-        alert("Silakan pilih metode pengiriman dan pembayaran terlebih dahulu!");
-        return;
-    }
-
-    const ship = shipEl.value;
-    const pay = payEl.value;
+    const isGajian = payEl && payEl.value === 'Bayar Gajian';
+    const isDelivery = shipEl && shipEl.value === 'Antar Nikomas';
     
-    if (ship === 'Diantar Kerumah' && !locationLink) {
-        alert("Silakan bagikan lokasi Anda terlebih dahulu!");
-        return;
-    }
-
-    const isGajian = pay === 'Bayar Gajian';
-    const now = new Date();
-    const wibOffset = 7 * 60 * 60 * 1000;
-    const nowWIB = new Date(now.getTime() + wibOffset);
-    const dateStr = nowWIB.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    
-    let itemDetails = "";
-    let grandTotal = 0;
-    let totalPoints = 0;
-
-    cart.forEach((item, index) => {
-        const tieredPrice = calculateTieredPrice(item.harga, item.qty, item.grosir);
-        const price = isGajian ? calculateGajianPrice(tieredPrice).price : tieredPrice;
-        const isGrosir = tieredPrice < item.harga;
-        
-        const subtotal = price * item.qty;
-        // Points are always calculated based on the tiered price
-        const itemPoints = calculateRewardPoints(tieredPrice, item.nama) * item.qty;
-        
-        grandTotal += subtotal;
-        totalPoints += itemPoints;
-        
-        itemDetails += `${index + 1}. ${item.nama} (x${item.qty})\n`;
-        itemDetails += `   Harga: Rp ${price.toLocaleString('id-ID')}${isGrosir ? ' (Grosir)' : ''}\n`;
-        itemDetails += `   Subtotal: Rp ${subtotal.toLocaleString('id-ID')}\n`;
-        itemDetails += `   Poin: +${itemPoints.toFixed(1)}\n`;
+    let subtotal = 0;
+    cart.forEach(item => {
+        const price = isGajian ? item.hargaGajian : item.harga;
+        const effectivePrice = calculateTieredPrice(price, item.qty, item.grosir);
+        subtotal += effectivePrice * item.qty;
     });
     
-    let locationInfo = "";
-    if (locationLink) {
-        locationInfo = `*Link Lokasi:* ${locationLink}\n`;
-    }
-
-    const rawPhone = document.getElementById('customer-phone') ? document.getElementById('customer-phone').value : '';
-    const phone = normalizePhone(rawPhone);
+    const shippingFee = isDelivery ? 2000 : 0;
+    const total = subtotal + shippingFee;
     
-    const message = `*PESANAN BARU - HARAPAN JAYA*
-------------------------------------------
-*Tanggal Pemesanan:* ${dateStr}
-*Atas Nama:* ${name || '-'}
-*No. WA:* ${phone || '-'}
-*Metode Bayar:* ${pay}
-*Pengiriman:* ${ship}
-${locationInfo}
-*Daftar Belanja:*
-${itemDetails}
-------------------------------------------
-*TOTAL BAYAR: Rp ${grandTotal.toLocaleString('id-ID')}*
-*POIN DIDAPAT: +${totalPoints.toFixed(1)} Poin*
-
-Mohon segera diproses, terima kasih!`;
-
-    const waUrl = `https://wa.me/628993370200?text=${encodeURIComponent(message)}`;
-
-    // Record order to SheetDB
-    const orderId = 'ORD-' + Date.now().toString().slice(-6);
-    const orderData = {
-        id: orderId,
-        pelanggan: name || 'Pelanggan',
-        phone: phone,
-        produk: cart.map(item => `${item.nama} (x${item.qty})`).join(', '),
-        qty: cart.reduce((sum, item) => sum + item.qty, 0),
-        total: grandTotal,
-        poin: totalPoints.toFixed(1),
-        status: 'Menunggu',
-        tanggal: dateStr,
-        points_awarded: 'Tidak'
-    };
-
-    const submitBtn = document.querySelector('button[onclick="sendToWA()"]');
-    const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span>⌛ Memproses Pesanan...</span>';
-    }
-
-    fetch(`${API_URL}?sheet=orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: orderData })
-    })
-    .then(response => response.json())
-    .then(result => {
-        console.log('Order recorded:', result);
-        window.open(waUrl, '_blank');
-        cart = [];
-        saveCart();
-        updateCartUI();
-        closeOrderModal();
-    })
-    .catch(error => {
-        console.error('Error recording order:', error);
-        // Still open WA even if recording fails, but alert the user
-        window.open(waUrl, '_blank');
-        cart = [];
-        saveCart();
-        updateCartUI();
-        closeOrderModal();
-    })
-    .finally(() => {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnText;
-    });
+    const subtotalEl = document.getElementById('order-subtotal');
+    const shippingEl = document.getElementById('order-shipping');
+    const totalEl = document.getElementById('order-total');
+    
+    if (subtotalEl) subtotalEl.innerText = `Rp ${subtotal.toLocaleString('id-ID')}`;
+    if (shippingEl) shippingEl.innerText = `Rp ${shippingFee.toLocaleString('id-ID')}`;
+    if (totalEl) totalEl.innerText = `Rp ${total.toLocaleString('id-ID')}`;
 }
 
-// ============ REWARD SYSTEM FUNCTIONS ============
 function normalizePhone(phone) {
-    if (!phone) return '';
-    let p = phone.toString().replace(/[^0-9]/g, '');
-    if (p.startsWith('62')) p = '0' + p.slice(2);
-    else if (p.startsWith('8')) p = '0' + p;
-    else if (!p.startsWith('0')) p = '0' + p;
-    
-    // Ensure it starts with 08
-    if (p.startsWith('0') && !p.startsWith('08') && p.length > 1) {
-        // For mobile numbers in Indonesia
-    }
+    let p = phone.replace(/[^0-9]/g, '');
+    if (p.startsWith('0')) p = '62' + p.substring(1);
+    if (p.startsWith('8')) p = '62' + p;
     return p;
 }
 
-function openRewardModal() {
-    const modal = document.getElementById('reward-modal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        document.body.classList.add('modal-active');
-        
-        // Auto-fill phone if available in order form
-        const orderPhone = document.getElementById('customer-phone');
-        const rewardPhone = document.getElementById('reward-phone');
-        if (orderPhone && rewardPhone && orderPhone.value && !rewardPhone.value) {
-            rewardPhone.value = orderPhone.value;
-        }
-        
-        fetchRewardItems();
+function sendWhatsAppOrder() {
+    const name = document.getElementById('customer-name').value;
+    const phone = document.getElementById('customer-phone').value;
+    const payMethod = document.querySelector('input[name="pay-method"]:checked')?.value;
+    const shipMethod = document.querySelector('input[name="ship-method"]:checked')?.value;
+    
+    if (!name || !phone || !payMethod || !shipMethod) {
+        alert('Mohon lengkapi semua data pesanan.');
+        return;
     }
-}
-
-function closeRewardModal() {
-    const modal = document.getElementById('reward-modal');
-    if (modal) {
-        modal.classList.add('hidden');
-        document.body.classList.remove('modal-active');
-    }
-}
-
-let userPointsBalance = 0;
-let userPhoneForReward = '';
-
-async function fetchRewardItems() {
-    const container = document.getElementById('reward-items-list');
-    if (!container) return;
-
-    try {
-        const API_URL = CONFIG.getMainApiUrl();
-        // Use 'tukar_poin' sheet as configured in admin
-        const response = await fetch(`${API_URL}?sheet=tukar_poin`);
-        const rewards = await response.json();
-
-        if (!Array.isArray(rewards) || rewards.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
-                    <p class="text-sm text-gray-500">Belum ada hadiah yang tersedia.</p>
-                </div>
-            `;
+    
+    let location = '';
+    if (shipMethod === 'Antar Nikomas') {
+        const gedung = document.getElementById('delivery-gedung').value;
+        const line = document.getElementById('delivery-line').value;
+        if (!gedung || !line) {
+            alert('Mohon lengkapi lokasi pengantaran.');
             return;
         }
-
-        container.innerHTML = rewards.map(item => {
-            const cost = parseInt(item.poin) || 0;
-            const canClaim = userPointsBalance >= cost && userPhoneForReward !== '';
-            const title = item.judul || item.nama; // Support both 'judul' (new) and 'nama' (old)
-            
-            return `
-                <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
-                    <img src="${item.gambar || 'https://via.placeholder.com/60?text=Gift'}" alt="${title}" class="w-16 h-16 object-cover rounded-lg bg-gray-50">
-                    <div class="flex-1">
-                        <h5 class="font-bold text-gray-800 text-sm">${title}</h5>
-                        <p class="text-amber-600 font-bold text-xs">${cost} Poin</p>
-                    </div>
-                    <button 
-                        onclick="claimReward('${title}', ${cost}, event)" 
-                        ${!canClaim ? 'disabled' : ''}
-                        class="px-4 py-2 rounded-lg font-bold text-xs transition ${canClaim ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}"
-                    >
-                        Tukar
-                    </button>
-                </div>
-            `;
-        }).join('');
-    } catch (error) {
-        console.error('Error fetching rewards:', error);
-        container.innerHTML = '<p class="text-center py-4 text-red-500 text-xs">Gagal memuat daftar hadiah.</p>';
-    }
-}
-
-async function checkUserPoints() {
-    const phoneInput = document.getElementById('reward-phone');
-    const phone = phoneInput.value.trim();
-    if (!phone) {
-        alert('Silakan masukkan nomor WhatsApp Anda.');
-        return;
-    }
-
-    userPhoneForReward = phone;
-    const display = document.getElementById('points-display');
-    display.classList.remove('hidden');
-    display.innerHTML = `
-        <div class="flex items-center gap-3 py-2">
-            <div class="animate-spin rounded-full h-4 w-4 border-2 border-amber-500 border-t-transparent"></div>
-            <p class="text-xs text-amber-600">Mencari data...</p>
-        </div>
-    `;
-
-    try {
-        const API_URL = CONFIG.getAdminApiUrl();
-        const normalizedSearchPhone = normalizePhone(phone);
-        
-        // Fetch from user_points sheet
-        const response = await fetch(`${API_URL}/search?sheet=user_points&phone=${normalizedSearchPhone}`);
-        const userData = await response.json();
-        
-        if (Array.isArray(userData) && userData.length > 0) {
-            userPointsBalance = parseFloat(userData[0].points) || 0;
-        } else {
-            userPointsBalance = 0;
+        location = `Gedung ${gedung}, Line ${line}`;
+    } else {
+        const pickup = document.getElementById('pickup-point').value;
+        if (!pickup) {
+            alert('Mohon pilih titik pengambilan.');
+            return;
         }
-
-        display.innerHTML = `
-            <p class="text-xs text-amber-600 font-medium">Total Poin Anda:</p>
-            <h4 class="text-3xl font-black text-amber-700">${userPointsBalance.toFixed(1)} <span class="text-sm font-bold">Poin</span></h4>
-            <p class="text-[10px] text-gray-400 mt-1 italic">*Saldo poin terpusat untuk kemudahan Anda.</p>
-        `;
-
-        // Refresh reward items to enable/disable buttons based on new balance
-        fetchRewardItems();
-    } catch (error) {
-        console.error('Error checking points:', error);
-        display.innerHTML = `
-            <p class="text-xs text-red-500 font-medium">Gagal mengambil data. Silakan coba lagi.</p>
-        `;
+        location = pickup;
     }
-}
-
-async function claimReward(rewardName, pointCost, event) {
-    if (userPointsBalance < pointCost) {
-        alert('Poin Anda tidak mencukupi untuk menukarkan hadiah ini.');
-        return;
-    }
-
-    const userName = prompt('Masukkan nama Anda untuk konfirmasi klaim:') || 'Pelanggan';
     
-    const message = `*KLAIM HADIAH - HARAPAN JAYA*
---------------------------------
-Halo Admin, saya ingin menukarkan poin saya.
-
-*Nama:* ${userName}
-*No. WA:* ${userPhoneForReward}
-*Hadiah:* ${rewardName}
-*Poin Ditukar:* ${pointCost} Poin
---------------------------------
-Mohon diproses penukarannya, terima kasih!`;
-
+    const isGajian = payMethod === 'Bayar Gajian';
+    let total = 0;
+    let itemsText = '';
+    
+    cart.forEach((item, idx) => {
+        const price = isGajian ? item.hargaGajian : item.harga;
+        const effectivePrice = calculateTieredPrice(price, item.qty, item.grosir);
+        const itemTotal = effectivePrice * item.qty;
+        total += itemTotal;
+        
+        const variationText = item.selectedVariation ? ` (${item.selectedVariation.nama})` : '';
+        itemsText += `${idx + 1}. ${item.nama}${variationText} x${item.qty} = Rp ${itemTotal.toLocaleString('id-ID')}\n`;
+    });
+    
+    const shippingFee = shipMethod === 'Antar Nikomas' ? 2000 : 0;
+    total += shippingFee;
+    
+    const message = `*PESANAN BARU - GOSEMBAKO*\n\n` +
+        `*Data Pelanggan:*\n` +
+        `Nama: ${name}\n` +
+        `WhatsApp: ${phone}\n\n` +
+        `*Detail Pesanan:*\n${itemsText}\n` +
+        `*Metode Pembayaran:* ${payMethod}\n` +
+        `*Metode Pengiriman:* ${shipMethod}\n` +
+        `*Lokasi/Titik:* ${location}\n\n` +
+        `*Ongkir:* Rp ${shippingFee.toLocaleString('id-ID')}\n` +
+        `*TOTAL BAYAR: Rp ${total.toLocaleString('id-ID')}*\n\n` +
+        `Mohon segera diproses ya, terima kasih!`;
+        
     const waUrl = `https://wa.me/628993370200?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, '_blank');
     
-    // Record claim to SheetDB
-    const API_URL = CONFIG.getAdminApiUrl();
-    const claimData = {
-        id: 'CLM-' + Date.now().toString().slice(-6),
-        phone: userPhoneForReward,
-        pelanggan: userName,
-        hadiah: rewardName,
-        poin: pointCost,
-        status: 'Menunggu',
-        tanggal: new Date().toLocaleString('id-ID')
-    };
-
-    // Show loading state on the button
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '...';
-
-    try {
-        // 1. Record claim to SheetDB
-        const response = await fetch(`${API_URL}?sheet=claims`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ data: claimData })
-        });
-
-        if (response.ok) {
-            // 2. Deduct points from user_points sheet
-            const normalizedPhone = normalizePhone(userPhoneForReward);
-            const newBalance = userPointsBalance - pointCost;
-            
-            await fetch(`${API_URL}/phone/${normalizedPhone}?sheet=user_points`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    data: { 
-                        points: newBalance,
-                        last_updated: new Date().toLocaleString('id-ID')
-                    } 
-                })
-            });
-
-            window.open(waUrl, '_blank');
-            showToast(`Permintaan klaim ${rewardName} telah dikirim!`);
-            
-            // Update local balance and UI
-            userPointsBalance = newBalance;
-            const display = document.getElementById('points-display');
-            if (display) {
-                const h4 = display.querySelector('h4');
-                if (h4) h4.innerHTML = `${userPointsBalance.toFixed(1)} <span class="text-sm font-bold">Poin</span>`;
-            }
-            fetchRewardItems();
-        } else {
-            throw new Error('Gagal mengirim data klaim');
-        }
-    } catch (err) {
-        console.error('Error recording claim:', err);
-        alert('Gagal memproses klaim. Silakan periksa koneksi internet Anda.');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-    }
+    // Clear cart after order
+    cart = [];
+    saveCart();
+    updateCartUI();
+    closeOrderModal();
+    showToast('Pesanan berhasil dikirim!');
 }
-
-// Hidden Admin Trigger: Click logo 3 times to access admin page
-let logoClickCount = 0;
-let logoClickTimer = null;
 
 function handleLogoClick() {
-    logoClickCount++;
-    
-    if (logoClickTimer) {
-        clearTimeout(logoClickTimer);
+    // Hidden admin access: click logo 5 times
+    let clicks = parseInt(sessionStorage.getItem('logo_clicks') || 0) + 1;
+    sessionStorage.setItem('logo_clicks', clicks);
+    if (clicks >= 5) {
+        sessionStorage.setItem('logo_clicks', 0);
+        window.location.href = 'admin/login.html';
     }
-    
-    if (logoClickCount === 3) {
-        logoClickCount = 0;
-        window.location.href = '/admin';
-    } else {
-        logoClickTimer = setTimeout(() => {
-            logoClickCount = 0;
-        }, 1000); // Reset count if not clicked 3 times within 1 second
-    }
+    setTimeout(() => sessionStorage.setItem('logo_clicks', 0), 3000);
 }
