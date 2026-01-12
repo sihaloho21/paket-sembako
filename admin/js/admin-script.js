@@ -33,6 +33,7 @@ function showSection(sectionId) {
         pesanan: 'Pesanan',
         'tukar-poin': 'Tukar Poin',
         'user-points': 'Poin Pengguna',
+        'tiered-pricing': 'Harga Grosir Bertingkat',
         pengaturan: 'Pengaturan'
     };
     document.getElementById('section-title').innerText = titles[sectionId];
@@ -42,6 +43,7 @@ function showSection(sectionId) {
     if (sectionId === 'pesanan') fetchOrders();
     if (sectionId === 'tukar-poin') fetchTukarPoin();
     if (sectionId === 'user-points') fetchUserPoints();
+    if (sectionId === 'tiered-pricing') fetchTieredPricingProducts();
     if (sectionId === 'dashboard') {
         updateDashboardStats();
         loadStoreStatus();

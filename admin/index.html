@@ -44,6 +44,10 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                 Poin Pengguna
             </button>
+            <button onclick="showSection('tiered-pricing')" id="nav-tiered-pricing" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                Harga Grosir
+            </button>
             <button onclick="showSection('pengaturan')" id="nav-pengaturan" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 Pengaturan
@@ -237,6 +241,30 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </section>
+
+            <!-- Section: Harga Grosir Bertingkat -->
+            <section id="section-tiered-pricing" class="hidden space-y-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800">Kelola Harga Grosir Bertingkat</h3>
+                        <p class="text-sm text-gray-500 mt-1">Atur harga grosir untuk mendorong pembelian dalam jumlah besar</p>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-6">
+                    <h4 class="font-bold text-blue-900 mb-3">Cara Kerja Harga Grosir</h4>
+                    <ul class="text-sm text-blue-800 space-y-2">
+                        <li>Aktifkan harga grosir untuk produk tertentu</li>
+                        <li>Tambahkan tingkatan harga berdasarkan kuantitas pembelian</li>
+                        <li>Harga akan otomatis diterapkan di keranjang belanja pelanggan</li>
+                        <li>Semakin banyak beli, semakin murah harganya</li>
+                    </ul>
+                </div>
+                
+                <div id="tiered-pricing-list" class="space-y-4">
+                    <!-- Products will be loaded here -->
                 </div>
             </section>
 
@@ -561,6 +589,7 @@
     </div>
 
     <script src="../assets/js/config.js"></script>
+    <script src="js/tiered-pricing.js"></script>
     <script src="js/admin-script.js"></script>
     <!-- Toast Container -->
     <div id="admin-toast-container" class="fixed bottom-8 right-8 z-[100] flex flex-col gap-3"></div>
