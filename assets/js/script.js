@@ -75,16 +75,15 @@ function renderProducts(products) {
 
         const rewardPoints = calculateRewardPoints(p.harga, p.nama);
         
-        let discountBadge = '';
         let hargaCoretHtml = '';
         if (p.hargaCoret > p.harga) {
             const diskon = Math.round(((p.hargaCoret - p.harga) / p.hargaCoret) * 100);
-            discountBadge = `
-                <div class="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-sm">
-                    -${diskon}%
+            hargaCoretHtml = `
+                <div class="flex items-center gap-1 mb-0.5">
+                    <span class="text-[10px] text-gray-400 line-through">Rp ${p.hargaCoret.toLocaleString('id-ID')}</span>
+                    <span class="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded font-bold">-${diskon}%</span>
                 </div>
             `;
-            hargaCoretHtml = `<span class="text-[10px] text-gray-400 line-through mr-2">Rp ${p.hargaCoret.toLocaleString('id-ID')}</span>`;
         }
 
         grid.innerHTML += `
@@ -94,7 +93,6 @@ function renderProducts(products) {
                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
                         +${rewardPoints} Poin
                     </div>
-                    ${discountBadge}
                 </div>
                 <img src="${mainImage}" alt="${p.nama}" onclick='showDetail(${pData})' class="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity ${p.stok === 0 ? 'grayscale opacity-60' : ''}" onerror="this.src='https://via.placeholder.com/300x200?text=Produk'">
                 <div class="p-6">
@@ -118,8 +116,10 @@ function renderProducts(products) {
                         </div>
                         <div class="bg-blue-50 p-3 rounded-lg">
                             <p class="text-[10px] text-blue-600 font-bold uppercase">Bayar Gajian</p>
-                            <p class="text-lg font-bold text-blue-700">Rp ${p.hargaGajian.toLocaleString('id-ID')}</p>
-                            <p class="text-[8px] text-blue-400 mt-1">Harga Per Tgl ${new Date().toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}).replace(/\//g, '-')}</p>
+                            <div class="flex flex-col">
+                                <p class="text-[8px] text-blue-400 mb-0.5">Harga Per Tgl ${new Date().toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}).replace(/\//g, '-')}</p>
+                                <p class="text-lg font-bold text-blue-700">Rp ${p.hargaGajian.toLocaleString('id-ID')}</p>
+                            </div>
                         </div>
                     </div>
                     <button onclick='addToCart(${pData}, event)' ${p.stok === 0 ? 'disabled' : ''} class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 mb-3">
