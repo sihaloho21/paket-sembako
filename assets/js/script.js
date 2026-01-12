@@ -75,6 +75,28 @@ function renderProducts(products) {
 
         const rewardPoints = calculateRewardPoints(p.harga, p.nama);
         
+        // Parse wholesale pricing
+        let grosirHtml = '';
+        let hasGrosir = false;
+        if (p.grosir) {
+            try {
+                const tiers = JSON.parse(p.grosir);
+                if (Array.isArray(tiers) && tiers.length > 0) {
+                    hasGrosir = true;
+                    const sortedTiers = [...tiers].sort((a, b) => a.min_qty - b.min_qty);
+                    const tierTexts = sortedTiers.map(t => `Beli ${t.min_qty}: Rp ${t.price.toLocaleString('id-ID')}`);
+                    grosirHtml = `
+                        <div class="mt-4 pt-3 border-t border-dashed border-gray-100">
+                            <p class="text-[10px] font-bold text-green-600 mb-1">Beli Banyak Lebih Murah</p>
+                            <p class="text-[10px] text-gray-500 italic">${tierTexts.join(' | ')}</p>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                console.error('Error parsing grosir data for product:', p.id, e);
+            }
+        }
+
         let hargaCoretHtml = '';
         if (p.hargaCoret > p.harga) {
             const diskon = Math.round(((p.hargaCoret - p.harga) / p.hargaCoret) * 100);
@@ -93,6 +115,12 @@ function renderProducts(products) {
                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
                         +${rewardPoints} Poin
                     </div>
+                    ${hasGrosir ? `
+                    <div class="bg-green-600 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-sm flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7c.78.78.78 2.047 0 2.828l-7 7c-.78.78-2.047.78-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                        Harga Grosir Tersedia
+                    </div>
+                    ` : ''}
                 </div>
                 <img src="${mainImage}" alt="${p.nama}" onclick='showDetail(${pData})' class="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity ${p.stok === 0 ? 'grayscale opacity-60' : ''}" onerror="this.src='https://via.placeholder.com/300x200?text=Produk'">
                 <div class="p-6">
@@ -130,7 +158,7 @@ function renderProducts(products) {
                         <button onclick='showDetail(${pData})' class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2 rounded-lg text-sm transition">Rincian</button>
                         <button onclick='directOrder(${pData})' ${p.stok === 0 ? 'disabled' : ''} class="bg-green-100 hover:bg-green-200 text-green-700 font-bold py-2 rounded-lg text-sm transition">Beli Sekarang</button>
                     </div>
-                    <p class="text-[10px] text-gray-400 mt-4 text-center italic">Diantar Nikomas - Diantar Kerumah - Ambil Ditempat</p>
+                    ${grosirHtml ? grosirHtml : '<p class="text-[10px] text-gray-400 mt-4 text-center italic">Diantar Nikomas - Diantar Kerumah - Ambil Ditempat</p>'}
                 </div>
             </div>
         `;
