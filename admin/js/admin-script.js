@@ -383,7 +383,12 @@ function renderAdminTable() {
             <td class="px-6 py-4">
                 <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded-md text-[10px] font-bold uppercase">${p.kategori || '-'}</span>
             </td>
-            <td class="px-6 py-4 font-bold text-green-700 text-sm">Rp ${parseInt(p.harga).toLocaleString('id-ID')}</td>
+            <td class="px-6 py-4">
+                <div class="flex flex-col">
+                    ${p.harga_coret ? `<span class="text-[10px] text-gray-400 line-through">Rp ${parseInt(p.harga_coret).toLocaleString('id-ID')}</span>` : ''}
+                    <span class="font-bold text-green-700 text-sm">Rp ${parseInt(p.harga).toLocaleString('id-ID')}</span>
+                </div>
+            </td>
             <td class="px-6 py-4">
                 <span class="text-sm ${parseInt(p.stok) <= 5 ? 'text-red-600 font-bold' : 'text-gray-600'}">${p.stok}</span>
             </td>
@@ -414,6 +419,7 @@ function openEditModal(id) {
     document.getElementById('product-id').value = p.id;
     document.getElementById('form-nama').value = p.nama;
     document.getElementById('form-harga').value = p.harga;
+    document.getElementById('form-harga-coret').value = p.harga_coret || '';
     document.getElementById('form-stok').value = p.stok;
     document.getElementById('form-category').value = p.kategori || '';
     document.getElementById('form-deskripsi').value = p.deskripsi || '';
@@ -446,6 +452,7 @@ document.getElementById('product-form').addEventListener('submit', async (e) => 
     const data = {
         nama: document.getElementById('form-nama').value,
         harga: document.getElementById('form-harga').value,
+        harga_coret: document.getElementById('form-harga-coret').value,
         stok: document.getElementById('form-stok').value,
         kategori: document.getElementById('form-category').value,
         deskripsi: document.getElementById('form-deskripsi').value,

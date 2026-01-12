@@ -29,6 +29,7 @@ async function fetchProducts() {
             return {
                 ...p,
                 harga: cashPrice,
+                hargaCoret: parseInt(p.harga_coret) || 0,
                 hargaGajian: gajianInfo.price,
                 stok: parseInt(p.stok) || 0,
                 category: category,
@@ -73,13 +74,27 @@ function renderProducts(products) {
         const mainImage = images[0] || 'https://via.placeholder.com/300x200?text=Produk';
 
         const rewardPoints = calculateRewardPoints(p.harga, p.nama);
+        
+        let discountBadge = '';
+        let hargaCoretHtml = '';
+        if (p.hargaCoret > p.harga) {
+            const diskon = Math.round(((p.hargaCoret - p.harga) / p.hargaCoret) * 100);
+            discountBadge = `
+                <div class="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-sm">
+                    -${diskon}%
+                </div>
+            `;
+            hargaCoretHtml = `<span class="text-[10px] text-gray-400 line-through mr-2">Rp ${p.hargaCoret.toLocaleString('id-ID')}</span>`;
+        }
+
         grid.innerHTML += `
             <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition duration-300 relative">
-                <div class="absolute top-3 left-3 z-10">
+                <div class="absolute top-3 left-3 z-10 flex flex-col gap-2">
                     <div class="bg-amber-400 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-sm flex items-center gap-1">
                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
                         +${rewardPoints} Poin
                     </div>
+                    ${discountBadge}
                 </div>
                 <img src="${mainImage}" alt="${p.nama}" onclick='showDetail(${pData})' class="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity ${p.stok === 0 ? 'grayscale opacity-60' : ''}" onerror="this.src='https://via.placeholder.com/300x200?text=Produk'">
                 <div class="p-6">
@@ -96,7 +111,10 @@ function renderProducts(products) {
                     <div class="grid grid-cols-2 gap-4 mb-6">
                         <div class="bg-green-50 p-3 rounded-lg">
                             <p class="text-[10px] text-green-600 font-bold uppercase">Harga Cash</p>
-                            <p class="text-lg font-bold text-green-700">Rp ${p.harga.toLocaleString('id-ID')}</p>
+                            <div class="flex flex-col">
+                                ${hargaCoretHtml}
+                                <p class="text-lg font-bold text-green-700">Rp ${p.harga.toLocaleString('id-ID')}</p>
+                            </div>
                         </div>
                         <div class="bg-blue-50 p-3 rounded-lg">
                             <p class="text-[10px] text-blue-600 font-bold uppercase">Bayar Gajian</p>
@@ -335,7 +353,25 @@ function showDetail(p) {
     const savingsAmount = document.getElementById('savings-amount');
 
     if (nameEl) nameEl.innerText = p.nama;
-    if (cashPriceEl) cashPriceEl.innerText = `Rp ${p.harga.toLocaleString('id-ID')}`;
+    if (cashPriceEl) {
+        let hargaHtml = `Rp ${p.harga.toLocaleString('id-ID')}`;
+        if (p.hargaCoret > p.harga) {
+            const diskon = Math.round(((p.hargaCoret - p.harga) / p.hargaCoret) * 100);
+            hargaHtml = `
+                <div class="flex flex-col">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm text-gray-400 line-through">Rp ${p.hargaCoret.toLocaleString('id-ID')}</span>
+                        <span class="bg-red-100 text-red-600 text-[10px] px-2 py-0.5 rounded-md font-bold">-${diskon}%</span>
+                    </div>
+                    <span class="text-2xl font-black text-green-700">Rp ${p.harga.toLocaleString('id-ID')}</span>
+                </div>
+            `;
+            cashPriceEl.innerHTML = hargaHtml;
+        } else {
+            cashPriceEl.innerText = hargaHtml;
+            cashPriceEl.className = "text-2xl font-black text-green-700";
+        }
+    }
     if (gajianPriceEl) gajianPriceEl.innerText = `Rp ${p.hargaGajian.toLocaleString('id-ID')}`;
     if (priceDateEl) {
         const today = new Date().toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}).replace(/\//g, '-');
