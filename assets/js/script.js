@@ -101,6 +101,7 @@ function renderProducts(products) {
                         <div class="bg-blue-50 p-3 rounded-lg">
                             <p class="text-[10px] text-blue-600 font-bold uppercase">Bayar Gajian</p>
                             <p class="text-lg font-bold text-blue-700">Rp ${p.hargaGajian.toLocaleString('id-ID')}</p>
+                            <p class="text-[8px] text-blue-400 mt-1">Harga Per Tgl ${new Date().toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}).replace(/\//g, '-')}</p>
                         </div>
                     </div>
                     <button onclick='addToCart(${pData}, event)' ${p.stok === 0 ? 'disabled' : ''} class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 mb-3">
@@ -327,6 +328,7 @@ function showDetail(p) {
     const imageEl = document.getElementById('modal-product-image');
     const cashPriceEl = document.getElementById('modal-cash-price');
     const gajianPriceEl = document.getElementById('modal-gajian-price');
+    const priceDateEl = document.getElementById('modal-price-date');
     const itemsListEl = document.getElementById('modal-items-list');
     const badgesEl = document.getElementById('modal-badges');
     const savingsHighlight = document.getElementById('savings-highlight');
@@ -335,6 +337,10 @@ function showDetail(p) {
     if (nameEl) nameEl.innerText = p.nama;
     if (cashPriceEl) cashPriceEl.innerText = `Rp ${p.harga.toLocaleString('id-ID')}`;
     if (gajianPriceEl) gajianPriceEl.innerText = `Rp ${p.hargaGajian.toLocaleString('id-ID')}`;
+    if (priceDateEl) {
+        const today = new Date().toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}).replace(/\//g, '-');
+        priceDateEl.innerText = `Harga Per Tgl ${today}`;
+    }
     
     if (badgesEl) {
         const rewardPoints = calculateRewardPoints(p.harga, p.nama);
