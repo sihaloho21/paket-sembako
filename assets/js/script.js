@@ -281,7 +281,12 @@ function updateCartUI() {
         
         let total = 0;
         itemsContainer.innerHTML = cart.map((item, index) => {
-            total += item.harga * item.qty;
+            // Calculate tiered price
+            const effectivePrice = calculateTieredPrice(item.harga, item.qty, item.grosir);
+            const isGrosir = effectivePrice < item.harga;
+            const itemTotal = effectivePrice * item.qty;
+            total += itemTotal;
+            
             const images = item.gambar ? item.gambar.split(',') : [];
             const mainImage = images[0] || 'https://via.placeholder.com/100x100?text=Produk';
             return `
@@ -289,7 +294,10 @@ function updateCartUI() {
                     <img src="${mainImage}" class="w-16 h-16 object-cover rounded-lg">
                     <div class="flex-1">
                         <h5 class="font-bold text-gray-800 text-sm">${item.nama}</h5>
-                        <p class="text-green-600 font-bold text-xs">Rp ${item.harga.toLocaleString('id-ID')}</p>
+                        <div class="flex flex-col">
+                            ${isGrosir ? `<span class="text-[10px] text-gray-400 line-through">Rp ${item.harga.toLocaleString('id-ID')}</span>` : ''}
+                            <p class="text-green-600 font-bold text-xs">Rp ${effectivePrice.toLocaleString('id-ID')} ${isGrosir ? '<span class="bg-green-100 text-green-700 text-[8px] px-1 rounded ml-1">Grosir</span>' : ''}</p>
+                        </div>
                         <div class="flex items-center gap-3 mt-2">
                             <button onclick="updateQty(${index}, -1)" class="w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-500">-</button>
                             <span class="text-sm font-bold">${item.qty}</span>
@@ -387,6 +395,69 @@ function showDetail(p) {
                 +${rewardPoints} Poin Reward
             </span>
         `;
+    }
+
+    // Render Tiered Pricing UI
+    const tieredPricingUI = document.getElementById('tiered-pricing-ui');
+    const priceTiersTable = document.getElementById('price-tiers-table');
+    const currentTierBadge = document.getElementById('current-tier-badge');
+    const progressContainer = document.getElementById('tier-progress-container');
+    const progressBar = document.getElementById('tier-progress-bar');
+    const progressText = document.getElementById('tier-progress-text');
+    const progressPercent = document.getElementById('tier-progress-percent');
+
+    if (tieredPricingUI && priceTiersTable) {
+        let tiers = [];
+        if (p.grosir) {
+            try {
+                tiers = typeof p.grosir === 'string' ? JSON.parse(p.grosir) : p.grosir;
+            } catch (e) {
+                console.error('Error parsing grosir data', e);
+            }
+        }
+
+        if (Array.isArray(tiers) && tiers.length > 0) {
+            tieredPricingUI.classList.remove('hidden');
+            
+            // Sort tiers by min_qty ascending for display
+            const sortedTiers = [...tiers].sort((a, b) => a.min_qty - b.min_qty);
+            
+            // Check if product is already in cart to show progress
+            const cartItem = cart.find(item => item.nama === p.nama);
+            const currentQty = cartItem ? cartItem.qty : 0;
+            
+            // Render Tiers Table
+            priceTiersTable.innerHTML = sortedTiers.map(tier => {
+                const isActive = currentQty >= tier.min_qty;
+                return `
+                    <div class="p-2 rounded-xl border-2 ${isActive ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-blue-100 text-blue-800'} text-center transition-all duration-300">
+                        <p class="text-[8px] font-bold uppercase opacity-80">Min. ${tier.min_qty}</p>
+                        <p class="text-xs font-black">Rp ${tier.price.toLocaleString('id-ID')}</p>
+                    </div>
+                `;
+            }).join('');
+
+            // Update Progress Bar
+            const nextTier = getNextTierInfo(currentQty, tiers);
+            if (nextTier) {
+                progressContainer.classList.remove('hidden');
+                const prevMinQty = sortedTiers.find((t, i) => sortedTiers[i+1] && sortedTiers[i+1].min_qty === nextTier.min_qty)?.min_qty || 0;
+                const range = nextTier.min_qty - prevMinQty;
+                const progress = Math.min(100, Math.max(0, ((currentQty - prevMinQty) / range) * 100));
+                
+                progressBar.style.width = `${progress}%`;
+                progressPercent.innerText = `${Math.round(progress)}%`;
+                progressText.innerHTML = `Beli <span class="font-bold">${nextTier.min_qty - currentQty} lagi</span> untuk harga Rp ${nextTier.price.toLocaleString('id-ID')}!`;
+                currentTierBadge.classList.add('hidden');
+            } else {
+                // Max tier reached
+                progressContainer.classList.add('hidden');
+                currentTierBadge.classList.remove('hidden');
+                currentTierBadge.innerText = 'Harga Terbaik Aktif! 🎉';
+            }
+        } else {
+            tieredPricingUI.classList.add('hidden');
+        }
     }
 
     if (savingsHighlight && savingsAmount) {
@@ -683,7 +754,9 @@ function updateOrderTotal() {
     const isGajian = payEl && payEl.value === 'Bayar Gajian';
     
     const total = cart.reduce((sum, item) => {
-        const price = isGajian ? item.hargaGajian : item.harga;
+        // Use tiered price as base for cash/QRIS, or apply gajian markup on tiered price
+        const tieredPrice = calculateTieredPrice(item.harga, item.qty, item.grosir);
+        const price = isGajian ? calculateGajianPrice(tieredPrice).price : tieredPrice;
         return sum + (price * item.qty);
     }, 0);
     
@@ -698,18 +771,24 @@ function updateOrderTotal() {
     if (summaryEl && document.getElementById('order-modal').classList.contains('hidden') === false) {
         let totalPoints = 0;
         summaryEl.innerHTML = cart.map(item => {
-            const price = isGajian ? item.hargaGajian : item.harga;
+            const tieredPrice = calculateTieredPrice(item.harga, item.qty, item.grosir);
+            const price = isGajian ? calculateGajianPrice(tieredPrice).price : tieredPrice;
+            const isGrosir = tieredPrice < item.harga;
+            
             // Points are always calculated based on the base cash price for fairness
-            const itemPoints = calculateRewardPoints(item.harga, item.nama) * item.qty;
+            const itemPoints = calculateRewardPoints(tieredPrice, item.nama) * item.qty;
             totalPoints += itemPoints;
             return `
                 <div class="flex justify-between items-center py-1">
                     <div class="flex flex-col">
                         <span class="font-medium">${item.nama} (x${item.qty})</span>
-                        <span class="text-[10px] text-amber-600 font-bold flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                            +${itemPoints.toFixed(1)} Poin
-                        </span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] text-amber-600 font-bold flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                +${itemPoints.toFixed(1)} Poin
+                            </span>
+                            ${isGrosir ? '<span class="bg-green-100 text-green-700 text-[8px] px-1 rounded font-bold">Harga Grosir</span>' : ''}
+                        </div>
                     </div>
                     <span class="font-bold">Rp ${(price * item.qty).toLocaleString('id-ID')}</span>
                 </div>
@@ -769,13 +848,21 @@ function sendToWA() {
     let totalPoints = 0;
 
     cart.forEach((item, index) => {
-        const price = isGajian ? item.hargaGajian : item.harga;
+        const tieredPrice = calculateTieredPrice(item.harga, item.qty, item.grosir);
+        const price = isGajian ? calculateGajianPrice(tieredPrice).price : tieredPrice;
+        const isGrosir = tieredPrice < item.harga;
+        
         const subtotal = price * item.qty;
-        // Points are always calculated based on the base cash price for fairness
-        const itemPoints = calculateRewardPoints(item.harga, item.nama) * item.qty;
+        // Points are always calculated based on the tiered price
+        const itemPoints = calculateRewardPoints(tieredPrice, item.nama) * item.qty;
+        
         grandTotal += subtotal;
         totalPoints += itemPoints;
-        itemDetails += `${index + 1}. ${item.nama} (x${item.qty})\n   Harga: Rp ${price.toLocaleString('id-ID')}\n   Subtotal: Rp ${subtotal.toLocaleString('id-ID')}\n   Poin: +${itemPoints.toFixed(1)}\n`;
+        
+        itemDetails += `${index + 1}. ${item.nama} (x${item.qty})\n`;
+        itemDetails += `   Harga: Rp ${price.toLocaleString('id-ID')}${isGrosir ? ' (Grosir)' : ''}\n`;
+        itemDetails += `   Subtotal: Rp ${subtotal.toLocaleString('id-ID')}\n`;
+        itemDetails += `   Poin: +${itemPoints.toFixed(1)}\n`;
     });
     
     let locationInfo = "";
