@@ -76,16 +76,25 @@ function renderProducts(products) {
         const rewardPoints = calculateRewardPoints(p.harga, p.nama);
         
         // Parse wholesale pricing
-        let grosirHtml = '';
+        let grosirGridHtml = '';
         let hasGrosir = false;
-        let tierTexts = [];
         if (p.grosir) {
             try {
                 const tiers = JSON.parse(p.grosir);
                 if (Array.isArray(tiers) && tiers.length > 0) {
                     hasGrosir = true;
                     const sortedTiers = [...tiers].sort((a, b) => a.min_qty - b.min_qty);
-                    tierTexts = sortedTiers.map(t => `Beli ${t.min_qty}: Rp ${t.price.toLocaleString('id-ID')}`);
+                    const gridItems = sortedTiers.map(t => `
+                        <div class="bg-green-50 border border-green-100 rounded-lg p-1.5 text-center">
+                            <p class="text-[8px] text-green-600 font-bold uppercase leading-tight">Min. ${t.min_qty}</p>
+                            <p class="text-[10px] text-green-700 font-black">Rp ${t.price.toLocaleString('id-ID')}</p>
+                        </div>
+                    `).join('');
+                    grosirGridHtml = `
+                        <div class="grid grid-cols-3 gap-2 mb-3">
+                            ${gridItems}
+                        </div>
+                    `;
                 }
             } catch (e) {
                 console.error('Error parsing grosir data for product:', p.id, e);
@@ -145,7 +154,7 @@ function renderProducts(products) {
                             </div>
                         </div>
                     </div>
-                    ${tierTexts.length > 0 ? `<p class="text-[10px] text-green-600 font-bold mb-3 text-center">${tierTexts.join(' | ')}</p>` : ''}
+                    ${grosirGridHtml}
                     <button onclick='addToCart(${pData}, event)' ${p.stok === 0 ? 'disabled' : ''} class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 mb-3">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         Tambah ke Keranjang
