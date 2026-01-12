@@ -370,7 +370,10 @@ function updateCartUI() {
             total += itemTotal;
             
             const images = item.gambar ? item.gambar.split(',') : [];
-            const mainImage = images[0] || 'https://via.placeholder.com/100x100?text=Produk';
+            let mainImage = images[0] || 'https://via.placeholder.com/100x100?text=Produk';
+            if (item.selectedVariation && item.selectedVariation.gambar) {
+                mainImage = item.selectedVariation.gambar;
+            }
             return `
                 <div class="flex items-center gap-4 bg-gray-50 p-3 rounded-xl">
                     <img src="${mainImage}" class="w-16 h-16 object-cover rounded-lg">
@@ -668,6 +671,7 @@ function openOrderModal() {
         summaryEl.innerHTML = cart.map(item => {
             const price = isGajian ? item.hargaGajian : item.harga;
             // Points are always calculated based on the base cash price for fairness
+            // Use variation price for points if it's a variant
             const itemPoints = calculateRewardPoints(item.harga, item.nama) * item.qty;
             totalPoints += itemPoints;
             return `
