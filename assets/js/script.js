@@ -78,19 +78,14 @@ function renderProducts(products) {
         // Parse wholesale pricing
         let grosirHtml = '';
         let hasGrosir = false;
+        let tierTexts = [];
         if (p.grosir) {
             try {
                 const tiers = JSON.parse(p.grosir);
                 if (Array.isArray(tiers) && tiers.length > 0) {
                     hasGrosir = true;
                     const sortedTiers = [...tiers].sort((a, b) => a.min_qty - b.min_qty);
-                    const tierTexts = sortedTiers.map(t => `Beli ${t.min_qty}: Rp ${t.price.toLocaleString('id-ID')}`);
-                    grosirHtml = `
-                        <div class="mt-4 pt-3 border-t border-dashed border-gray-100">
-                            <p class="text-[10px] font-bold text-green-600 mb-1">Beli Banyak Lebih Murah</p>
-                            <p class="text-[10px] text-gray-500 italic">${tierTexts.join(' | ')}</p>
-                        </div>
-                    `;
+                    tierTexts = sortedTiers.map(t => `Beli ${t.min_qty}: Rp ${t.price.toLocaleString('id-ID')}`);
                 }
             } catch (e) {
                 console.error('Error parsing grosir data for product:', p.id, e);
@@ -138,6 +133,7 @@ function renderProducts(products) {
                         <div class="bg-green-50 p-3 rounded-lg">
                             <p class="text-[10px] text-green-600 font-bold uppercase">Harga Cash</p>
                             <div class="flex flex-col">
+                                ${tierTexts.length > 0 ? `<p class="text-[10px] text-green-600 font-bold mb-1">${tierTexts.join(' | ')}</p>` : ''}
                                 ${hargaCoretHtml}
                                 <p class="text-lg font-bold text-green-700">Rp ${p.harga.toLocaleString('id-ID')}</p>
                             </div>
@@ -158,7 +154,7 @@ function renderProducts(products) {
                         <button onclick='showDetail(${pData})' class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2 rounded-lg text-sm transition">Rincian</button>
                         <button onclick='directOrder(${pData})' ${p.stok === 0 ? 'disabled' : ''} class="bg-green-100 hover:bg-green-200 text-green-700 font-bold py-2 rounded-lg text-sm transition">Beli Sekarang</button>
                     </div>
-                    ${grosirHtml ? grosirHtml : '<p class="text-[10px] text-gray-400 mt-4 text-center italic">Diantar Nikomas - Diantar Kerumah - Ambil Ditempat</p>'}
+
                 </div>
             </div>
         `;
