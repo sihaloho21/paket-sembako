@@ -1123,7 +1123,7 @@ function checkUserPoints() {
                 value.innerHTML = `${pts.toFixed(1)} <span class="text-sm font-bold">Poin</span>`;
                 sessionStorage.setItem('user_points', pts);
                 sessionStorage.setItem('reward_phone', normalizedPhone);
-                sessionStorage.setItem('reward_customer_name', user.pelanggan || user.nama || normalizedPhone);
+                sessionStorage.setItem('reward_customer_name', user.nama || user.pelanggan || normalizedPhone);
                 showToast(`Ditemukan ${pts.toFixed(1)} poin untuk nomor ini!`);
             } else {
                 value.innerHTML = `0.0 <span class="text-sm font-bold">Poin</span>`;
@@ -1209,7 +1209,7 @@ async function claimReward(rewardId) {
                 data: {
                     id: claimId,
                     phone: phone,
-                    pelanggan: customerName,
+                    nama: customerName,
                     hadiah: rewardName,
                     poin: requiredPoints,
                     status: 'Menunggu',
