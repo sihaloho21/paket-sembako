@@ -211,17 +211,17 @@ function setCategory(cat) {
     filterProducts();
 }
 
-function addToCart(p, event) {
+function addToCart(p, event, qty = 1) {
     if (storeClosed) {
         showStoreWarning(() => {
-            proceedAddToCart(p, event);
+            proceedAddToCart(p, event, qty);
         });
         return;
     }
-    proceedAddToCart(p, event);
+    proceedAddToCart(p, event, qty);
 }
 
-function proceedAddToCart(p, event) {
+function proceedAddToCart(p, event, qty = 1) {
     // If product has variations and none selected, show detail
     if (p.variations && p.variations.length > 0 && !selectedVariation) {
         showDetail(p);
@@ -247,9 +247,9 @@ function proceedAddToCart(p, event) {
     });
 
     if (existing) {
-        existing.qty += 1;
+        existing.qty += qty;
     } else {
-        cart.push({ ...itemToAdd, qty: 1 });
+        cart.push({ ...itemToAdd, qty: qty });
     }
     
     saveCart();
@@ -431,12 +431,27 @@ function closeCartModal() {
     }
 }
 
+function updateModalQty(delta) {
+    const qtyInput = document.getElementById('modal-qty');
+    if (!qtyInput) return;
+    
+    let qty = parseInt(qtyInput.value) || 1;
+    qty += delta;
+    if (qty < 1) qty = 1;
+    qtyInput.value = qty;
+    
+    // Trigger the oninput handler to update UI
+    qtyInput.oninput({ target: qtyInput });
+}
+
 function showDetail(p) {
     const modal = document.getElementById('detail-modal');
     if (!modal) return;
 
-    // Reset selected variation when opening modal
+    // Reset selected variation and quantity when opening modal
     selectedVariation = null;
+    const qtyInput = document.getElementById('modal-qty');
+    if (qtyInput) qtyInput.value = 1;
 
     const nameEl = document.getElementById('modal-product-name');
     const imageEl = document.getElementById('modal-product-image');
@@ -510,7 +525,21 @@ function showDetail(p) {
 
     // Tiered Pricing Logic in Modal
     if (typeof updateTieredPricingUI === 'function') {
-        updateTieredPricingUI(p);
+        updateTieredPricingUI(p, 1);
+        
+        // Add listener for quantity changes if it doesn't exist
+        const qtyInput = document.getElementById('modal-qty'); // Assuming there's a qty input
+        if (qtyInput) {
+            qtyInput.oninput = (e) => {
+                const qty = parseInt(e.target.value) || 1;
+                updateTieredPricingUI(p, qty);
+                
+                // Also update modal prices based on tiered price
+                const effectivePrice = calculateTieredPrice(p.harga, qty, p.grosir);
+                const gajianInfo = calculateGajianPrice(effectivePrice);
+                updateModalPrices(effectivePrice, gajianInfo.price, p.hargaCoret || 0);
+            };
+        }
     }
 
     modal.classList.remove('hidden');
@@ -670,6 +699,9 @@ function openOrderModal() {
         let totalPoints = 0;
         summaryEl.innerHTML = cart.map(item => {
             const price = isGajian ? item.hargaGajian : item.harga;
+            const effectivePrice = calculateTieredPrice(price, item.qty, item.grosir);
+            const isGrosir = effectivePrice < price;
+            
             // Points are always calculated based on the base cash price for fairness
             // Use variation price for points if it's a variant
             const itemPoints = calculateRewardPoints(item.harga, item.nama) * item.qty;
@@ -678,12 +710,18 @@ function openOrderModal() {
                 <div class="flex justify-between items-center py-1">
                     <div class="flex flex-col">
                         <span class="font-medium">${item.nama}${item.selectedVariation ? ' (' + item.selectedVariation.nama + ')' : ''} (x${item.qty})</span>
-                        <span class="text-[10px] text-amber-600 font-bold flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                            +${itemPoints.toFixed(1)} Poin
-                        </span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] text-amber-600 font-bold flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                +${itemPoints.toFixed(1)} Poin
+                            </span>
+                            ${isGrosir ? '<span class="bg-green-100 text-green-700 text-[8px] px-1 rounded font-bold">Harga Grosir</span>' : ''}
+                        </div>
                     </div>
-                    <span class="font-bold">Rp ${(price * item.qty).toLocaleString('id-ID')}</span>
+                    <div class="flex flex-col items-end">
+                        ${isGrosir ? `<span class="text-[10px] text-gray-400 line-through">Rp ${(price * item.qty).toLocaleString('id-ID')}</span>` : ''}
+                        <span class="font-bold">Rp ${(effectivePrice * item.qty).toLocaleString('id-ID')}</span>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -761,7 +799,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = document.getElementById('modal-product-name').innerText;
             const product = allProducts.find(p => p.nama === name);
             if (product) {
-                addToCart(product, event);
+                const qtyInput = document.getElementById('modal-qty');
+                const qty = qtyInput ? parseInt(qtyInput.value) : 1;
+                addToCart(product, event, qty);
                 closeDetailModal();
             }
         });
@@ -856,11 +896,13 @@ function sendWhatsAppOrder() {
     cart.forEach((item, idx) => {
         const price = isGajian ? item.hargaGajian : item.harga;
         const effectivePrice = calculateTieredPrice(price, item.qty, item.grosir);
+        const isGrosir = effectivePrice < price;
         const itemTotal = effectivePrice * item.qty;
         total += itemTotal;
         
         const variationText = item.selectedVariation ? ` (${item.selectedVariation.nama})` : '';
-        itemsText += `${idx + 1}. ${item.nama}${variationText} x${item.qty} = Rp ${itemTotal.toLocaleString('id-ID')}\n`;
+        const grosirText = isGrosir ? ` (Harga Grosir: Rp ${effectivePrice.toLocaleString('id-ID')}/unit)` : '';
+        itemsText += `${idx + 1}. ${item.nama}${variationText} x${item.qty}${grosirText} = Rp ${itemTotal.toLocaleString('id-ID')}\n`;
     });
     
     const shippingFee = shipMethod === 'Antar Nikomas' ? 2000 : 0;
