@@ -960,69 +960,59 @@ function closeRewardModal() {
  */
 function checkUserPoints() {
     const phone = document.getElementById('reward-phone').value.trim();
-    
     if (!phone) {
-        alert('Mohon masukkan nomor WhatsApp terlebih dahulu.');
+        alert('Mohon masukkan nomor WhatsApp.');
         return;
     }
-    
+
     const normalizedPhone = normalizePhone(phone);
-    
+    const apiUrl = `${API_URL}?sheet=user_points`; // Target the specific sheet
+
     // Show loading state
     const checkBtn = event.target;
-    const originalText = checkBtn.innerText;
-    checkBtn.innerText = 'Mencari...';
-    checkBtn.disabled = true;
-    
-    // Fetch from SheetDB
-    const apiUrl = API_URL;
-    
+    const originalText = checkBtn ? checkBtn.innerText : 'Cek Poin';
+    if (checkBtn) {
+        checkBtn.innerText = 'Mencari...';
+        checkBtn.disabled = true;
+    }
+
     fetch(apiUrl)
-        .then(response => response.json())
+        .then(res => res.json())
         .then(data => {
-            // Find user by phone number
-            const userRecord = data.find(record => {
-                const recordPhone = normalizePhone(record.whatsapp || '');
-                return recordPhone === normalizedPhone;
-            });
-            
-            const pointsDisplay = document.getElementById('points-display');
-            const pointsValue = document.querySelector('#points-display h4');
-            
-            if (userRecord && userRecord.poin) {
-                // User found with points
-                const points = parseFloat(userRecord.poin) || 0;
-                pointsValue.innerHTML = `${points.toFixed(1)} <span class="text-sm font-bold">Poin</span>`;
-                pointsDisplay.classList.remove('hidden');
-                
-                // Store phone for later use
+            // Find user by normalized phone
+            const user = data.find(r => normalizePhone(r.whatsapp || '') === normalizedPhone);
+
+            const display = document.getElementById('points-display');
+            const value = document.querySelector('#points-display h4');
+
+            if (user) {
+                const pts = parseFloat(user.poin) || 0;
+                value.innerHTML = `${pts.toFixed(1)} <span class="text-sm font-bold">Poin</span>`;
+                sessionStorage.setItem('user_points', pts);
                 sessionStorage.setItem('reward_phone', normalizedPhone);
-                sessionStorage.setItem('user_points', points);
-                
-                showToast(`Ditemukan ${points.toFixed(1)} poin untuk nomor ini!`);
+                showToast(`Ditemukan ${pts.toFixed(1)} poin untuk nomor ini!`);
             } else {
-                // User not found or no points
-                pointsValue.innerHTML = `0.0 <span class="text-sm font-bold">Poin</span>`;
-                pointsDisplay.classList.remove('hidden');
-                
-                sessionStorage.setItem('reward_phone', normalizedPhone);
+                value.innerHTML = `0.0 <span class="text-sm font-bold">Poin</span>`;
                 sessionStorage.setItem('user_points', 0);
-                
-                showToast('Nomor ini belum memiliki poin. Mulai berbelanja untuk mendapatkan poin!');
+                sessionStorage.setItem('reward_phone', normalizedPhone);
+                showToast('Nomor tidak ditemukan atau belum memiliki poin.');
             }
+            display.classList.remove('hidden');
         })
         .catch(error => {
             console.error('Error checking points:', error);
             alert('Gagal mengecek poin. Silakan coba lagi.');
         })
         .finally(() => {
-            checkBtn.innerText = originalText;
-            checkBtn.disabled = false;
+            if (checkBtn) {
+                checkBtn.innerText = originalText;
+                checkBtn.disabled = false;
+            }
         });
 }
 
 /**
- * Claim reward - placeholder for future implementation
+ * Claim reward
  */
 function claimReward(rewardId) {
     const phone = sessionStorage.getItem('reward_phone');
@@ -1043,34 +1033,6 @@ function claimReward(rewardId) {
     if (confirm(message)) {
         // Send to WhatsApp for manual processing
         const waMessage = `*KLAIM REWARD POIN*\n\nNomor WhatsApp: ${phone}\nTotal Poin: ${points.toFixed(1)} Poin\nReward ID: ${rewardId}\n\nMohon proses klaim reward saya.`;
-        const waUrl = `https://wa.me/628993370200?text=${encodeURIComponent(waMessage)}`;
-        window.open(waUrl, '_blank');
-        
-        showToast('Permintaan klaim reward telah dikirim ke WhatsApp admin!');
-    }
-}
-/**
- * Claim reward - placeholder for future implementation
- */
-function claimReward(rewardId) {
-    const phone = sessionStorage.getItem('reward_phone');
-    const points = parseFloat(sessionStorage.getItem('user_points')) || 0;
-    
-    if (!phone) {
-        alert('Mohon cek poin Anda terlebih dahulu.');
-        return;
-    }
-    
-    if (points <= 0) {
-        alert('Anda tidak memiliki poin untuk ditukar.');
-        return;
-    }
-    
-    // Show confirmation
-    const message = `Tukar poin Anda (${points.toFixed(1)} poin) dengan reward ini?`;
-    if (confirm(message)) {
-        // Send to WhatsApp for manual processing
-        const waMessage = `*KLAIM REWARD POIN*\\n\\nNomor WhatsApp: ${phone}\\nTotal Poin: ${points.toFixed(1)} Poin\\nReward ID: ${rewardId}\\n\\nMohon proses klaim reward saya.`;
         const waUrl = `https://wa.me/628993370200?text=${encodeURIComponent(waMessage)}`;
         window.open(waUrl, '_blank');
         
