@@ -871,6 +871,15 @@ function normalizePhone(phone) {
     return p;
 }
 
+function generateOrderId() {
+    const chars = '0123456789';
+    let result = '';
+    for (let i = 0; i < 6; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return `ORD-${result}`;
+}
+
 function sendToWA() {
     const name = document.getElementById('customer-name').value;
     const phone = document.getElementById('customer-phone').value;
@@ -893,7 +902,9 @@ function sendToWA() {
     
     const isGajian = payMethod === 'Bayar Gajian';
     let total = 0;
+    let totalQty = 0;
     let itemsText = '';
+    let itemsForSheet = '';
     
     cart.forEach((item, idx) => {
         const price = isGajian ? item.hargaGajian : item.harga;
@@ -901,16 +912,26 @@ function sendToWA() {
         const isGrosir = effectivePrice < price;
         const itemTotal = effectivePrice * item.qty;
         total += itemTotal;
+        totalQty += item.qty;
         
         const variationText = item.selectedVariation ? ` (${item.selectedVariation.nama})` : '';
         const grosirText = isGrosir ? ` (Harga Grosir: Rp ${effectivePrice.toLocaleString('id-ID')}/unit)` : '';
         itemsText += `${idx + 1}. ${item.nama}${variationText} x${item.qty}${grosirText} = Rp ${itemTotal.toLocaleString('id-ID')}\n`;
+        itemsForSheet += `${item.nama}${variationText} (x${item.qty}) | `;
     });
     
     const shippingFee = shipMethod === 'Antar Nikomas' ? 2000 : 0;
     total += shippingFee;
     
+    // Calculate reward points (1 point per 10,000 IDR)
+    const rewardConfig = CONFIG.getRewardConfig();
+    const pointValue = rewardConfig.pointValue || 10000;
+    const pointsEarned = Math.floor(total / pointValue);
+    
+    const orderId = generateOrderId();
+    
     const message = `*PESANAN BARU - GOSEMBAKO*\n\n` +
+        `*Order ID: ${orderId}*\n` +
         `*Data Pelanggan:*\n` +
         `Nama: ${name}\n` +
         `WhatsApp: ${phone}\n\n` +
@@ -919,21 +940,25 @@ function sendToWA() {
         `*Metode Pengiriman:* ${shipMethod}\n` +
         `*Lokasi/Titik:* ${location}\n\n` +
         `*Ongkir:* Rp ${shippingFee.toLocaleString('id-ID')}\n` +
-        `*TOTAL BAYAR: Rp ${total.toLocaleString('id-ID')}*\n\n` +
+        `*TOTAL BAYAR: Rp ${total.toLocaleString('id-ID')}*\n` +
+        `*Estimasi Poin:* +${pointsEarned} Poin\n\n` +
         `Mohon segera diproses ya, terima kasih!`;
         
     const waUrl = `https://wa.me/628993370200?text=${encodeURIComponent(message)}`;
     
     // Log order to spreadsheet before opening WhatsApp
+    // Mapping to spreadsheet columns: id, pelanggan, produk, qty, total, status, tanggal, phone, poin, point_processed
     const orderData = {
-        tanggal: new Date().toLocaleString('id-ID'),
-        nama: name,
-        whatsapp: phone,
-        item: itemsText.replace(/\n/g, ' | '),
-        metode_bayar: payMethod,
-        metode_kirim: shipMethod,
+        id: orderId,
+        pelanggan: name,
+        produk: itemsForSheet.slice(0, -3), // Remove trailing ' | '
+        qty: totalQty,
         total: total,
-        status: 'Pending'
+        status: 'Pending',
+        tanggal: new Date().toLocaleString('id-ID'),
+        phone: normalizePhone(phone),
+        poin: pointsEarned,
+        point_processed: 'No'
     };
 
     fetch(`${API_URL}?sheet=orders`, {

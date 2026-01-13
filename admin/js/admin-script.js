@@ -201,7 +201,7 @@ async function updateOrderStatus(id, newStatus) {
         const result = await response.json();
         
         if (result.affected > 0 || response.ok) {
-            if (newStatus === 'Terima' && order.points_awarded !== 'Ya') {
+            if (newStatus === 'Terima' && order.point_processed !== 'Yes') {
                 if (order.phone && order.poin) {
                     const pointsToAdd = parseFloat(order.poin) || 0;
                     const phone = normalizePhone(order.phone);
@@ -242,7 +242,7 @@ async function updateOrderStatus(id, newStatus) {
                         await fetch(`${API_URL}/id/${id}?sheet=${ORDERS_SHEET}`, {
                             method: 'PATCH',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ data: { points_awarded: 'Ya' } })
+                            body:JSON.stringify({ data: { point_processed: 'Yes' } })
                         });
                         showAdminToast(`Status diperbarui & +${pointsToAdd} poin diberikan ke ${phone}`, 'success');
                     } else {
@@ -256,7 +256,7 @@ async function updateOrderStatus(id, newStatus) {
             const orderIndex = allOrders.findIndex(o => o.id === id);
             if (orderIndex !== -1) {
                 allOrders[orderIndex].status = newStatus;
-                if (newStatus === 'Terima') allOrders[orderIndex].points_awarded = 'Ya';
+                if (newStatus === 'Terima') allOrders[orderIndex].point_processed = 'Yes';
                 renderOrderTable();
                 updateOrderStats();
             }
