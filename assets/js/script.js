@@ -923,14 +923,44 @@ function sendToWA() {
         `Mohon segera diproses ya, terima kasih!`;
         
     const waUrl = `https://wa.me/628993370200?text=${encodeURIComponent(message)}`;
-    window.open(waUrl, '_blank');
     
-    // Clear cart after order
-    cart = [];
-    saveCart();
-    updateCartUI();
-    closeOrderModal();
-    showToast('Pesanan berhasil dikirim!');
+    // Log order to spreadsheet before opening WhatsApp
+    const orderData = {
+        tanggal: new Date().toLocaleString('id-ID'),
+        nama: name,
+        whatsapp: phone,
+        item: itemsText.replace(/\n/g, ' | '),
+        metode_bayar: payMethod,
+        metode_kirim: shipMethod,
+        total: total,
+        status: 'Pending'
+    };
+
+    fetch(`${API_URL}?sheet=orders`, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify([orderData])
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log('Order logged to spreadsheet:', data);
+    })
+    .catch(err => {
+        console.error('Error logging order:', err);
+    })
+    .finally(() => {
+        window.open(waUrl, '_blank');
+        
+        // Clear cart after order
+        cart = [];
+        saveCart();
+        updateCartUI();
+        closeOrderModal();
+        showToast('Pesanan berhasil dikirim!');
+    });
 }
 
 function handleLogoClick() {
