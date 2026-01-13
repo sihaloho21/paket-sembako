@@ -844,13 +844,17 @@ function updateOrderTotal() {
     const shippingFee = isDelivery ? 2000 : 0;
     const total = subtotal + shippingFee;
     
+    // Update the display elements
+    const totalEl = document.getElementById('sticky-order-total');
+    if (totalEl) {
+        totalEl.innerText = `Rp ${total.toLocaleString('id-ID')}`;
+    }
+    
+    // Also update subtotal and shipping if they exist in the UI
     const subtotalEl = document.getElementById('order-subtotal');
     const shippingEl = document.getElementById('order-shipping');
-    const totalEl = document.getElementById('order-total');
-    
     if (subtotalEl) subtotalEl.innerText = `Rp ${subtotal.toLocaleString('id-ID')}`;
     if (shippingEl) shippingEl.innerText = `Rp ${shippingFee.toLocaleString('id-ID')}`;
-    if (totalEl) totalEl.innerText = `Rp ${total.toLocaleString('id-ID')}`;
 }
 
 function normalizePhone(phone) {
@@ -860,7 +864,7 @@ function normalizePhone(phone) {
     return p;
 }
 
-function sendWhatsAppOrder() {
+function sendToWA() {
     const name = document.getElementById('customer-name').value;
     const phone = document.getElementById('customer-phone').value;
     const payMethod = document.querySelector('input[name="pay-method"]:checked')?.value;
@@ -873,20 +877,11 @@ function sendWhatsAppOrder() {
     
     let location = '';
     if (shipMethod === 'Antar Nikomas') {
-        const gedung = document.getElementById('delivery-gedung').value;
-        const line = document.getElementById('delivery-line').value;
-        if (!gedung || !line) {
-            alert('Mohon lengkapi lokasi pengantaran.');
-            return;
-        }
-        location = `Gedung ${gedung}, Line ${line}`;
+        location = 'Antar Nikomas (Area PT Nikomas Gemilang)';
+    } else if (shipMethod === 'Antar Kerumah') {
+        location = 'Antar Kerumah (Area Serang & sekitarnya)';
     } else {
-        const pickup = document.getElementById('pickup-point').value;
-        if (!pickup) {
-            alert('Mohon pilih titik pengambilan.');
-            return;
-        }
-        location = pickup;
+        location = 'Ambil Ditempat (Kp. Baru, Kec. Kibin)';
     }
     
     const isGajian = payMethod === 'Bayar Gajian';
