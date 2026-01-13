@@ -858,9 +858,16 @@ function updateOrderTotal() {
 }
 
 function normalizePhone(phone) {
-    let p = phone.replace(/[^0-9]/g, '');
-    if (p.startsWith('0')) p = '62' + p.substring(1);
-    if (p.startsWith('8')) p = '62' + p;
+    if (!phone) return '';
+    let p = phone.toString().replace(/[^0-9]/g, '');
+    if (p.startsWith('62')) p = '0' + p.slice(2);
+    else if (p.startsWith('8')) p = '0' + p;
+    else if (!p.startsWith('0')) p = '0' + p;
+    
+    // Ensure it starts with 08 for mobile numbers
+    if (p.startsWith('0') && !p.startsWith('08') && p.length > 1) {
+        // Optional: handle other prefixes if needed
+    }
     return p;
 }
 
@@ -959,19 +966,21 @@ function closeRewardModal() {
  * Fetches points data based on phone number
  */
 function checkUserPoints() {
-    const phone = document.getElementById('reward-phone').value.trim();
+    const phoneInput = document.getElementById('reward-phone');
+    const phone = phoneInput ? phoneInput.value.trim() : '';
+    
     if (!phone) {
         alert('Mohon masukkan nomor WhatsApp.');
         return;
     }
 
     const normalizedPhone = normalizePhone(phone);
-    const apiUrl = `${API_URL}?sheet=user_points`; // Target the specific sheet
+    const apiUrl = `${API_URL}?sheet=user_points`;
 
     // Show loading state
     const checkBtn = event.target;
     const originalText = checkBtn ? checkBtn.innerText : 'Cek Poin';
-    if (checkBtn) {
+    if (checkBtn && checkBtn.tagName === 'BUTTON') {
         checkBtn.innerText = 'Mencari...';
         checkBtn.disabled = true;
     }
@@ -1004,7 +1013,7 @@ function checkUserPoints() {
             alert('Gagal mengecek poin. Silakan coba lagi.');
         })
         .finally(() => {
-            if (checkBtn) {
+            if (checkBtn && checkBtn.tagName === 'BUTTON') {
                 checkBtn.innerText = originalText;
                 checkBtn.disabled = false;
             }
