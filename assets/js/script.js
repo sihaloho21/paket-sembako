@@ -6,19 +6,6 @@ let currentPage = 1;
 const itemsPerPage = 12;
 let filteredProducts = [];
 let storeClosed = CONFIG.isStoreClosed();
-
-/**
- * Optimasi URL ImageKit untuk performa lebih baik
- * @param {string} url - URL gambar asli
- * @param {number} width - Lebar gambar yang diinginkan
- * @returns {string} URL yang sudah dioptimasi
- */
-function getOptimizedImage(url, width = 400) {
-    if (!url || !url.includes('imagekit.io')) return url || 'https://via.placeholder.com/300x200?text=Produk';
-    // Tambahkan transformasi ImageKit: lebar, kualitas 80, dan format otomatis (WebP)
-    const connector = url.includes('?') ? '&' : '?';
-    return `${url}${connector}tr=w-${width},q-80`;
-}
 let selectedVariation = null;
 
 // calculateGajianPrice is now handled in assets/js/payment-logic.js
@@ -108,8 +95,7 @@ function renderProducts(products) {
 
         const pData = JSON.stringify(p).replace(/"/g, '&quot;');
         const images = p.gambar ? p.gambar.split(',') : [];
-        // Gunakan 400px untuk katalog utama
-        const mainImage = getOptimizedImage(images[0], 400);
+        const mainImage = images[0] || 'https://via.placeholder.com/300x200?text=Produk';
 
         const rewardPoints = calculateRewardPoints(p.harga, p.nama);
         
@@ -591,11 +577,9 @@ function showDetail(p) {
     // Initialize Image Slider
     const images = p.gambar ? p.gambar.split(',') : [];
     if (typeof initializeSlider === 'function') {
-        // Optimasi gambar untuk slider (gunakan 800px karena tampilan lebih besar)
-        const optimizedImages = images.map(img => getOptimizedImage(img, 800));
-        initializeSlider(optimizedImages);
+        initializeSlider(images);
     } else if (imageEl) {
-        imageEl.src = getOptimizedImage(images[0], 800);
+        imageEl.src = images.length > 0 ? images[0] : 'https://via.placeholder.com/300x200?text=Produk';
         imageEl.onerror = function() { this.src = 'https://via.placeholder.com/300x200?text=Produk'; };
     }
 
