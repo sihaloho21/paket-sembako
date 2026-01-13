@@ -1123,11 +1123,13 @@ function checkUserPoints() {
                 value.innerHTML = `${pts.toFixed(1)} <span class="text-sm font-bold">Poin</span>`;
                 sessionStorage.setItem('user_points', pts);
                 sessionStorage.setItem('reward_phone', normalizedPhone);
+                sessionStorage.setItem('reward_customer_name', user.pelanggan || user.nama || normalizedPhone);
                 showToast(`Ditemukan ${pts.toFixed(1)} poin untuk nomor ini!`);
             } else {
                 value.innerHTML = `0.0 <span class="text-sm font-bold">Poin</span>`;
                 sessionStorage.setItem('user_points', 0);
                 sessionStorage.setItem('reward_phone', normalizedPhone);
+                sessionStorage.setItem('reward_customer_name', normalizedPhone);
                 showToast('Nomor tidak ditemukan atau belum memiliki poin.');
             }
             display.classList.remove('hidden');
@@ -1149,6 +1151,7 @@ function checkUserPoints() {
  */
 async function claimReward(rewardId) {
     const phone = sessionStorage.getItem('reward_phone');
+    const customerName = sessionStorage.getItem('reward_customer_name') || phone;
     const userPoints = parseFloat(sessionStorage.getItem('user_points')) || 0;
     
     if (!phone) {
@@ -1206,7 +1209,7 @@ async function claimReward(rewardId) {
                 data: {
                     id: claimId,
                     phone: phone,
-                    pelanggan: phone, // Using phone as default customer name if not available
+                    pelanggan: customerName,
                     hadiah: rewardName,
                     poin: requiredPoints,
                     status: 'Menunggu',
@@ -1225,7 +1228,7 @@ async function claimReward(rewardId) {
         }
 
         // 6. Send to WhatsApp for notification
-        const waMessage = `*KLAIM REWARD POIN BERHASIL*\n\nID Klaim: ${claimId}\nNomor WhatsApp: ${phone}\nReward: ${rewardName}\nPoin Ditukar: ${requiredPoints}\nSisa Poin: ${newPoints.toFixed(1)}\n\nMohon segera diproses. Terima kasih!`;
+        const waMessage = `*KLAIM REWARD POIN BERHASIL*\n\nID Klaim: ${claimId}\nPelanggan: ${customerName}\nNomor WhatsApp: ${phone}\nReward: ${rewardName}\nPoin Ditukar: ${requiredPoints}\nSisa Poin: ${newPoints.toFixed(1)}\n\nMohon segera diproses. Terima kasih!`;
         const waUrl = `https://wa.me/628993370200?text=${encodeURIComponent(waMessage)}`;
         
         showToast('Penukaran poin berhasil!');
