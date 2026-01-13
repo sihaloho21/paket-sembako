@@ -2,6 +2,9 @@ let API_URL = CONFIG.getMainApiUrl();
 let cart = JSON.parse(localStorage.getItem('sembako_cart')) || [];
 let allProducts = [];
 let currentCategory = 'Semua';
+let currentPage = 1;
+const itemsPerPage = 12;
+let filteredProducts = [];
 let storeClosed = CONFIG.isStoreClosed();
 let selectedVariation = null;
 
@@ -48,7 +51,7 @@ async function fetchProducts() {
                 variations: variations
             };
         });
-        renderProducts(allProducts);
+        filterProducts();
         updateCartUI();
         checkStoreStatus();
         startNotificationLoop();
@@ -67,11 +70,20 @@ function renderProducts(products) {
     
     if (products.length === 0) {
         grid.innerHTML = '<p class="text-center col-span-full text-gray-500 py-10">Tidak ada produk yang ditemukan.</p>';
+        document.getElementById('pagination-container').innerHTML = '';
         return;
     }
+
+    // Pagination Logic
+    const totalPages = Math.ceil(products.length / itemsPerPage);
+    if (currentPage > totalPages) currentPage = totalPages || 1;
+    
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const paginatedProducts = products.slice(start, end);
     
     grid.innerHTML = '';
-    products.forEach(p => {
+    paginatedProducts.forEach(p => {
         let stokLabel = '';
         if (p.stok > 5) {
             stokLabel = `<span class="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Stok Tersedia</span>`;
@@ -193,13 +205,72 @@ function renderProducts(products) {
 
 function filterProducts() {
     const query = document.getElementById('search-input').value.toLowerCase();
-    const filtered = allProducts.filter(p => {
+    filteredProducts = allProducts.filter(p => {
         const matchesSearch = p.nama.toLowerCase().includes(query) || 
                             (p.deskripsi && p.deskripsi.toLowerCase().includes(query));
         const matchesCategory = currentCategory === 'Semua' || p.category === currentCategory;
         return matchesSearch && matchesCategory;
     });
-    renderProducts(filtered);
+    currentPage = 1; // Reset to first page on filter
+    renderProducts(filteredProducts);
+    renderPagination(filteredProducts.length);
+}
+
+function renderPagination(totalItems) {
+    const container = document.getElementById('pagination-container');
+    if (!container) return;
+
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+    
+    // Previous Arrow
+    html += `
+        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} 
+            class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-gray-200 text-gray-600 hover:border-green-500 hover:text-green-600 disabled:opacity-30 disabled:cursor-not-allowed transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        </button>
+    `;
+
+    // Page Numbers
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+            html += `
+                <button onclick="changePage(${i})" 
+                    class="w-10 h-10 flex items-center justify-center rounded-lg border-2 font-bold transition ${i === currentPage ? 'bg-green-600 border-green-600 text-white' : 'border-gray-200 text-gray-600 hover:border-green-500 hover:text-green-600'}">
+                    ${i}
+                </button>
+            `;
+        } else if (i === currentPage - 2 || i === currentPage + 2) {
+            html += `<span class="text-gray-400">...</span>`;
+        }
+    }
+
+    // Next Arrow
+    html += `
+        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} 
+            class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-gray-200 text-gray-600 hover:border-green-500 hover:text-green-600 disabled:opacity-30 disabled:cursor-not-allowed transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+    `;
+
+    container.innerHTML = html;
+}
+
+function changePage(page) {
+    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+    if (page < 1 || page > totalPages) return;
+    
+    currentPage = page;
+    renderProducts(filteredProducts);
+    renderPagination(filteredProducts.length);
+    
+    // Scroll to top of catalog
+    document.getElementById('katalog').scrollIntoView({ behavior: 'smooth' });
 }
 
 function setCategory(cat) {
