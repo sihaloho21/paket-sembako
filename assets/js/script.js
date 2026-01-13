@@ -989,13 +989,16 @@ function checkUserPoints() {
         .then(res => res.json())
         .then(data => {
             // Find user by normalized phone
-            const user = data.find(r => normalizePhone(r.whatsapp || '') === normalizedPhone);
+            // Fix: API uses 'phone' field, not 'whatsapp'
+            const user = data.find(r => normalizePhone(r.phone || r.whatsapp || '') === normalizedPhone);
 
             const display = document.getElementById('points-display');
             const value = document.querySelector('#points-display h4');
 
             if (user) {
-                const pts = parseFloat(user.poin) || 0;
+                // Fix: Handle comma as decimal separator from spreadsheet
+                const rawPoints = (user.points || user.poin || '0').toString().replace(',', '.');
+                const pts = parseFloat(rawPoints) || 0;
                 value.innerHTML = `${pts.toFixed(1)} <span class="text-sm font-bold">Poin</span>`;
                 sessionStorage.setItem('user_points', pts);
                 sessionStorage.setItem('reward_phone', normalizedPhone);
