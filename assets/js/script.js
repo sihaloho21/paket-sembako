@@ -1151,7 +1151,6 @@ function checkUserPoints() {
  */
 async function claimReward(rewardId) {
     const phone = sessionStorage.getItem('reward_phone');
-    const customerName = sessionStorage.getItem('reward_customer_name') || phone;
     const userPoints = parseFloat(sessionStorage.getItem('user_points')) || 0;
     
     if (!phone) {
@@ -1178,9 +1177,14 @@ async function claimReward(rewardId) {
             return;
         }
 
-        // 2. Confirm redemption
+        // 2. Confirm redemption and ask for name
         const message = `Tukar ${requiredPoints} poin Anda dengan "${rewardName}"?\nSaldo poin saat ini: ${userPoints.toFixed(1)}`;
         if (!confirm(message)) return;
+
+        // Ask for customer name
+        let customerName = prompt("Silakan masukkan nama Anda untuk klaim ini:", sessionStorage.getItem('reward_customer_name') || "");
+        if (customerName === null) return; // User cancelled
+        customerName = customerName.trim() || "Pelanggan";
 
         // Show loading state
         showToast('Sedang memproses penukaran...');
