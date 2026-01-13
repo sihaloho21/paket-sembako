@@ -791,6 +791,7 @@ function showNotification(text) {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     fetchProducts();
+    fetchTukarPoin();
 
     // Add event listener for detail modal add to cart button
     const modalAddCartBtn = document.getElementById('modal-add-cart');
@@ -1000,11 +1001,76 @@ function handleLogoClick() {
 }
 
 // ============ REWARD MODAL FUNCTIONS ============
+async function fetchTukarPoin() {
+    const rewardList = document.getElementById('reward-items-list');
+    if (!rewardList) return;
+
+    try {
+        const response = await fetch(`${API_URL}?sheet=tukar_poin`);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const rewards = await response.json();
+        renderRewardItems(rewards);
+    } catch (error) {
+        console.error('Error fetching reward items:', error);
+        rewardList.innerHTML = `
+            <div class="text-center py-6 bg-red-50 rounded-2xl border-2 border-dashed border-red-200">
+                <p class="text-xs text-red-600 font-semibold">Gagal memuat hadiah. Silakan coba lagi nanti.</p>
+            </div>
+        `;
+    }
+}
+
+function renderRewardItems(rewards) {
+    const rewardList = document.getElementById('reward-items-list');
+    if (!rewardList) return;
+
+    if (!rewards || rewards.length === 0) {
+        rewardList.innerHTML = `
+            <div class="text-center py-10 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-dashed border-gray-300">
+                <p class="text-sm text-gray-600 font-semibold">Belum ada hadiah yang tersedia.</p>
+            </div>
+        `;
+        return;
+    }
+
+    rewardList.innerHTML = rewards.map(r => {
+        const id = r.id || '';
+        const nama = r.nama || r.judul || 'Hadiah';
+        const poin = r.poin || 0;
+        const gambar = r.gambar || 'https://via.placeholder.com/100?text=Reward';
+        const deskripsi = r.deskripsi || '';
+
+        return `
+            <div class="bg-white p-4 rounded-2xl border-2 border-gray-100 hover:border-green-500 transition-all group shadow-sm">
+                <div class="flex gap-4">
+                    <div class="w-20 h-20 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
+                        <img src="${gambar}" alt="${nama}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h5 class="font-bold text-gray-800 truncate">${nama}</h5>
+                        <p class="text-[10px] text-gray-500 line-clamp-2 mb-2">${deskripsi}</p>
+                        <div class="flex items-center justify-between">
+                            <div class="bg-amber-100 text-amber-700 px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                ${poin} Poin
+                            </div>
+                            <button onclick="claimReward('${id}')" class="bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition active:scale-95">
+                                Tukar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
 function openRewardModal() {
     const modal = document.getElementById('reward-modal');
     if (modal) {
         modal.classList.remove('hidden');
         document.body.classList.add('modal-active');
+        fetchTukarPoin();
     }
 }
 
