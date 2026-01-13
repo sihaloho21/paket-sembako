@@ -899,3 +899,144 @@ function handleLogoClick() {
     }
     setTimeout(() => sessionStorage.setItem('logo_clicks', 0), 3000);
 }
+
+// ============ REWARD MODAL FUNCTIONS ============
+function openRewardModal() {
+    const modal = document.getElementById('reward-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        document.body.classList.add('modal-active');
+    }
+}
+
+function closeRewardModal() {
+    const modal = document.getElementById('reward-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.classList.remove('modal-active');
+    }
+}
+
+/**
+ * Check user points from SheetDB
+ * Fetches points data based on phone number
+ */
+function checkUserPoints() {
+    const phone = document.getElementById('reward-phone').value.trim();
+    
+    if (!phone) {
+        alert('Mohon masukkan nomor WhatsApp terlebih dahulu.');
+        return;
+    }
+    
+    const normalizedPhone = normalizePhone(phone);
+    
+    // Show loading state
+    const checkBtn = event.target;
+    const originalText = checkBtn.innerText;
+    checkBtn.innerText = 'Mencari...';
+    checkBtn.disabled = true;
+    
+    // Fetch from SheetDB
+    const apiUrl = API_URL;
+    
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            // Find user by phone number
+            const userRecord = data.find(record => {
+                const recordPhone = normalizePhone(record.whatsapp || '');
+                return recordPhone === normalizedPhone;
+            });
+            
+            const pointsDisplay = document.getElementById('points-display');
+            const pointsValue = document.querySelector('#points-display h4');
+            
+            if (userRecord && userRecord.poin) {
+                // User found with points
+                const points = parseFloat(userRecord.poin) || 0;
+                pointsValue.innerHTML = `${points.toFixed(1)} <span class="text-sm font-bold">Poin</span>`;
+                pointsDisplay.classList.remove('hidden');
+                
+                // Store phone for later use
+                sessionStorage.setItem('reward_phone', normalizedPhone);
+                sessionStorage.setItem('user_points', points);
+                
+                showToast(`Ditemukan ${points.toFixed(1)} poin untuk nomor ini!`);
+            } else {
+                // User not found or no points
+                pointsValue.innerHTML = `0.0 <span class="text-sm font-bold">Poin</span>`;
+                pointsDisplay.classList.remove('hidden');
+                
+                sessionStorage.setItem('reward_phone', normalizedPhone);
+                sessionStorage.setItem('user_points', 0);
+                
+                showToast('Nomor ini belum memiliki poin. Mulai berbelanja untuk mendapatkan poin!');
+            }
+        })
+        .catch(error => {
+            console.error('Error checking points:', error);
+            alert('Gagal mengecek poin. Silakan coba lagi.');
+        })
+        .finally(() => {
+            checkBtn.innerText = originalText;
+            checkBtn.disabled = false;
+        });
+}
+
+/**
+ * Claim reward - placeholder for future implementation
+ */
+function claimReward(rewardId) {
+    const phone = sessionStorage.getItem('reward_phone');
+    const points = parseFloat(sessionStorage.getItem('user_points')) || 0;
+    
+    if (!phone) {
+        alert('Mohon cek poin Anda terlebih dahulu.');
+        return;
+    }
+    
+    if (points <= 0) {
+        alert('Anda tidak memiliki poin untuk ditukar.');
+        return;
+    }
+    
+    // Show confirmation
+    const message = `Tukar poin Anda (${points.toFixed(1)} poin) dengan reward ini?`;
+    if (confirm(message)) {
+        // Send to WhatsApp for manual processing
+        const waMessage = `*KLAIM REWARD POIN*\n\nNomor WhatsApp: ${phone}\nTotal Poin: ${points.toFixed(1)} Poin\nReward ID: ${rewardId}\n\nMohon proses klaim reward saya.`;
+        const waUrl = `https://wa.me/628993370200?text=${encodeURIComponent(waMessage)}`;
+        window.open(waUrl, '_blank');
+        
+        showToast('Permintaan klaim reward telah dikirim ke WhatsApp admin!');
+    }
+}
+/**
+ * Claim reward - placeholder for future implementation
+ */
+function claimReward(rewardId) {
+    const phone = sessionStorage.getItem('reward_phone');
+    const points = parseFloat(sessionStorage.getItem('user_points')) || 0;
+    
+    if (!phone) {
+        alert('Mohon cek poin Anda terlebih dahulu.');
+        return;
+    }
+    
+    if (points <= 0) {
+        alert('Anda tidak memiliki poin untuk ditukar.');
+        return;
+    }
+    
+    // Show confirmation
+    const message = `Tukar poin Anda (${points.toFixed(1)} poin) dengan reward ini?`;
+    if (confirm(message)) {
+        // Send to WhatsApp for manual processing
+        const waMessage = `*KLAIM REWARD POIN*\\n\\nNomor WhatsApp: ${phone}\\nTotal Poin: ${points.toFixed(1)} Poin\\nReward ID: ${rewardId}\\n\\nMohon proses klaim reward saya.`;
+        const waUrl = `https://wa.me/628993370200?text=${encodeURIComponent(waMessage)}`;
+        window.open(waUrl, '_blank');
+        
+        showToast('Permintaan klaim reward telah dikirim ke WhatsApp admin!');
+    }
+}

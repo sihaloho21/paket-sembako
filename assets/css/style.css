@@ -183,3 +183,65 @@ body.modal-active { overflow-x: hidden; overflow-y: visible !important; }
 #detail-modal::-webkit-scrollbar-thumb:hover {
     background: #d1d5db;
 }
+
+
+/* Reward Modal Animations */
+@keyframes pulse-in {
+    from { 
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to { 
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-pulse-in {
+    animation: pulse-in 0.3s ease-out;
+}
+
+/* Reward Button Hover Effect */
+.reward-button-glow {
+    box-shadow: 0 0 20px rgba(217, 119, 6, 0.4);
+}
+
+/* Reward Points Display Animation */
+@keyframes float-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#points-display {
+    animation: float-in 0.4s ease-out;
+}
+
+/* Smooth Modal Transitions */
+#reward-modal {
+    transition: opacity 0.3s ease;
+}
+
+#reward-modal:not(.hidden) {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Input Focus Effect */
+#reward-phone:focus {
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
+}
+
+/* Button Active State */
+button[onclick="checkUserPoints()"]:active {
+    transform: scale(0.98);
+}
