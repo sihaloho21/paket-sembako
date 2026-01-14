@@ -182,7 +182,7 @@ function renderProducts(products) {
                     </div>
                     ${grosirGridHtml}
                     ${hasVariations ? `
-                    <button onclick='showDetail(${pData})' class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 mb-3">
+                    <button onclick='showDetail(${pData}); event.stopPropagation();' class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 mb-3">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                         Pilih Variasi
                     </button>
@@ -193,8 +193,8 @@ function renderProducts(products) {
                     </button>
                     `}
                     <div class="grid grid-cols-2 gap-2">
-                        <button onclick='showDetail(${pData})' class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2 rounded-lg text-sm transition">Rincian</button>
-                        <button onclick='directOrder(${pData})' ${p.stok === 0 ? 'disabled' : ''} class="bg-green-100 hover:bg-green-200 text-green-700 font-bold py-2 rounded-lg text-sm transition">Beli Sekarang</button>
+                        <button onclick='showDetail(${pData}); event.stopPropagation();' class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2 rounded-lg text-sm transition">Rincian</button>
+                        <button onclick='directOrder(${pData}); event.stopPropagation();' ${p.stok === 0 ? 'disabled' : ''} class="bg-green-100 hover:bg-green-200 text-green-700 font-bold py-2 rounded-lg text-sm transition">Beli Sekarang</button>
                     </div>
 
                 </div>
@@ -516,6 +516,7 @@ function updateModalQty(delta) {
 }
 
 function showDetail(p) {
+    console.log('showDetail called for product:', p.nama);
     const modal = document.getElementById('detail-modal');
     if (!modal) return;
 
