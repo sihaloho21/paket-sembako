@@ -603,12 +603,18 @@ function showDetail(p) {
         if (qtyInput) {
             qtyInput.oninput = (e) => {
                 const qty = parseInt(e.target.value) || 1;
-                updateTieredPricingUI(p, qty);
+                
+                // If variation is selected, use variation price, otherwise use base product price
+                const basePrice = selectedVariation ? selectedVariation.harga : p.harga;
+                const grosirData = selectedVariation ? selectedVariation.grosir : p.grosir;
+                const coretPrice = selectedVariation ? (selectedVariation.harga_coret || 0) : (p.hargaCoret || 0);
+
+                updateTieredPricingUI({ ...p, harga: basePrice, grosir: grosirData }, qty);
                 
                 // Also update modal prices based on tiered price
-                const effectivePrice = calculateTieredPrice(p.harga, qty, p.grosir);
+                const effectivePrice = calculateTieredPrice(basePrice, qty, grosirData);
                 const gajianInfo = calculateGajianPrice(effectivePrice);
-                updateModalPrices(effectivePrice, gajianInfo.price, p.hargaCoret || 0);
+                updateModalPrices(effectivePrice, gajianInfo.price, coretPrice);
             };
         }
     }
@@ -631,9 +637,15 @@ function selectVariation(v, index) {
         }
     });
 
-    // Update prices based on variation
-    const gajianInfo = calculateGajianPrice(v.harga);
-    updateModalPrices(v.harga, gajianInfo.price, v.harga_coret || 0);
+    // Trigger quantity update to recalculate prices with the new variation
+    const qtyInput = document.getElementById('modal-qty');
+    if (qtyInput) {
+        qtyInput.oninput({ target: qtyInput });
+    } else {
+        // Fallback if qtyInput is not found
+        const gajianInfo = calculateGajianPrice(v.harga);
+        updateModalPrices(v.harga, gajianInfo.price, v.harga_coret || 0);
+    }
     
     // Update image if variation has one
     if (v.gambar) {
