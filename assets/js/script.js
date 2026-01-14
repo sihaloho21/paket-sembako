@@ -539,7 +539,7 @@ function showDetail(p) {
     if (nameEl) nameEl.innerText = p.nama;
     
     // 1. Setup Quantity Listener FIRST
-    const qtyInput = document.getElementById('modal-qty');
+    // qtyInput already declared above
     if (qtyInput) {
         qtyInput.oninput = (e) => {
             const qty = parseInt(e.target.value) || 1;
