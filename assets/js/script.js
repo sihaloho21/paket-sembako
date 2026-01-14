@@ -93,7 +93,7 @@ function renderProducts(products) {
             stokLabel = `<span class="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Stok Habis</span>`;
         }
 
-        const pData = JSON.stringify(p).replace(/"/g, '&quot;');
+        const pData = JSON.stringify(p).replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const images = p.gambar ? p.gambar.split(',') : [];
         const mainImage = images[0] || 'https://via.placeholder.com/300x200?text=Produk';
 
@@ -543,7 +543,7 @@ function showDetail(p) {
             variationContainer.classList.remove('hidden');
             const variationList = document.getElementById('modal-variation-list');
             variationList.innerHTML = p.variations.map((v, idx) => `
-                <button onclick='selectVariation(${JSON.stringify(v).replace(/"/g, '&quot;')}, ${idx})' class="variation-btn border-2 border-gray-200 rounded-xl p-3 text-left transition hover:border-green-500 focus:outline-none" data-index="${idx}">
+	                <button onclick='selectVariation(${JSON.stringify(v).replace(/'/g, "\\'").replace(/"/g, "&quot;")}, ${idx})' class="variation-btn border-2 border-gray-200 rounded-xl p-3 text-left transition hover:border-green-500 focus:outline-none" data-index="${idx}">
                     <p class="text-xs font-bold text-gray-800">${v.nama}</p>
                     <p class="text-[10px] text-green-600 font-bold">Rp ${v.harga.toLocaleString('id-ID')}</p>
                     ${v.stok <= 0 ? '<p class="text-[8px] text-red-500 font-bold">Stok Habis</p>' : ''}
