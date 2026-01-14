@@ -538,7 +538,29 @@ function showDetail(p) {
 
     if (nameEl) nameEl.innerText = p.nama;
     
-    // Handle Variations UI
+    // 1. Setup Quantity Listener FIRST
+    const qtyInput = document.getElementById('modal-qty');
+    if (qtyInput) {
+        qtyInput.oninput = (e) => {
+            const qty = parseInt(e.target.value) || 1;
+            
+            // If variation is selected, use variation price, otherwise use base product price
+            const basePrice = selectedVariation ? selectedVariation.harga : p.harga;
+            const grosirData = selectedVariation ? selectedVariation.grosir : p.grosir;
+            const coretPrice = selectedVariation ? (selectedVariation.harga_coret || 0) : (p.hargaCoret || 0);
+
+            if (typeof updateTieredPricingUI === 'function') {
+                updateTieredPricingUI({ ...p, harga: basePrice, grosir: grosirData }, qty);
+            }
+            
+            // Also update modal prices based on tiered price
+            const effectivePrice = typeof calculateTieredPrice === 'function' ? calculateTieredPrice(basePrice, qty, grosirData) : basePrice;
+            const gajianInfo = typeof calculateGajianPrice === 'function' ? calculateGajianPrice(effectivePrice) : { price: effectivePrice };
+            updateModalPrices(effectivePrice, gajianInfo.price, coretPrice);
+        };
+    }
+
+    // 2. Handle Variations UI
     if (variationContainer) {
         if (p.variations && p.variations.length > 0) {
             variationContainer.classList.remove('hidden');
@@ -595,29 +617,9 @@ function showDetail(p) {
         `).join('');
     }
 
-    // Tiered Pricing Logic in Modal
+    // 3. Initial UI Update
     if (typeof updateTieredPricingUI === 'function') {
         updateTieredPricingUI(p, 1);
-        
-        // Add listener for quantity changes if it doesn't exist
-        const qtyInput = document.getElementById('modal-qty'); // Assuming there's a qty input
-        if (qtyInput) {
-            qtyInput.oninput = (e) => {
-                const qty = parseInt(e.target.value) || 1;
-                
-                // If variation is selected, use variation price, otherwise use base product price
-                const basePrice = selectedVariation ? selectedVariation.harga : p.harga;
-                const grosirData = selectedVariation ? selectedVariation.grosir : p.grosir;
-                const coretPrice = selectedVariation ? (selectedVariation.harga_coret || 0) : (p.hargaCoret || 0);
-
-                updateTieredPricingUI({ ...p, harga: basePrice, grosir: grosirData }, qty);
-                
-                // Also update modal prices based on tiered price
-                const effectivePrice = calculateTieredPrice(basePrice, qty, grosirData);
-                const gajianInfo = calculateGajianPrice(effectivePrice);
-                updateModalPrices(effectivePrice, gajianInfo.price, coretPrice);
-            };
-        }
     }
 
     modal.classList.remove('hidden');
