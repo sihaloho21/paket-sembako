@@ -428,14 +428,13 @@ function showSuccessNotification(orderId) {
             <p class="text-gray-600 mb-4">Order ID: <span class="font-mono font-semibold text-green-600">${orderId}</span></p>
             <p class="text-sm text-gray-500 mb-6">Pesanan Anda telah tercatat dan akan segera diproses. Silakan lanjutkan ke WhatsApp untuk konfirmasi.</p>
         </div>
-        <div class="flex items-center justify-center gap-2 text-green-600 text-sm font-semibold mb-4">
+        <div class="flex items-center justify-center gap-2 text-green-600 text-sm font-semibold">
             <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
             <span>Membuka WhatsApp...</span>
         </div>
-        <p class="text-xs text-gray-400">Notifikasi akan tertutup otomatis dalam <span id="countdown-timer">10</span> detik</p>
     `;
     
     overlay.appendChild(notification);
@@ -462,33 +461,9 @@ function showSuccessNotification(orderId) {
         document.head.appendChild(style);
     }
     
-    // Countdown timer
-    let countdown = 10;
-    const countdownEl = document.getElementById('countdown-timer');
-    const countdownInterval = setInterval(() => {
-        countdown--;
-        if (countdownEl) {
-            countdownEl.textContent = countdown;
-        }
-        if (countdown <= 0) {
-            clearInterval(countdownInterval);
-        }
-    }, 1000);
-    
-    // Auto remove after 10 seconds
-    const autoCloseTimeout = setTimeout(() => {
-        overlay.style.animation = 'fadeOut 0.3s ease-out';
-        setTimeout(() => {
-            overlay.remove();
-            clearInterval(countdownInterval);
-        }, 300);
-    }, 10000);
-    
-    // Allow manual close (also clear timeout)
+    // Allow manual close by clicking overlay
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
-            clearTimeout(autoCloseTimeout);
-            clearInterval(countdownInterval);
             overlay.style.animation = 'fadeOut 0.3s ease-out';
             setTimeout(() => overlay.remove(), 300);
         }
