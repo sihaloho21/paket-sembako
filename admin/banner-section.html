@@ -116,9 +116,21 @@
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">URL Redirect (Tujuan Klik) *</label>
-                            <input type="url" id="banner-redirect-url" required class="w-full p-3 border border-gray-200 rounded-xl outline-none focus:border-green-500" placeholder="https://wa.me/628993370200?text=Promo%20Gajian">
-                            <p class="text-xs text-gray-500 mt-1">URL yang akan dibuka ketika banner diklik (contoh: WhatsApp, halaman promo, dll)</p>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">URL Redirect (Opsional)</label>
+                            <input type="url" id="banner-redirect-url" class="w-full p-3 border border-gray-200 rounded-xl outline-none focus:border-green-500" placeholder="https://wa.me/628993370200 atau kosongkan untuk modal">
+                            <p class="text-xs text-gray-500 mt-1">Kosongkan jika ingin menggunakan modal promo</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Deskripsi Promo</label>
+                            <textarea id="banner-promo-description" rows="3" class="w-full p-3 border border-gray-200 rounded-xl outline-none focus:border-green-500" placeholder="Dapatkan diskon 20% untuk semua produk sembako pilihan..."></textarea>
+                            <p class="text-xs text-gray-500 mt-1">Deskripsi yang akan ditampilkan di modal promo</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Produk Terkait</label>
+                            <input type="text" id="banner-promo-products" class="w-full p-3 border border-gray-200 rounded-xl outline-none focus:border-green-500" placeholder="Telor Ayam 1/5 Kg & 1 Kg,Minyak Kita 1L & 2L">
+                            <p class="text-xs text-gray-500 mt-1">Nama produk dipisahkan dengan koma (,) - sesuai nama di Google Sheets</p>
                         </div>
                         
                         <div class="grid grid-cols-2 gap-4">
@@ -135,6 +147,15 @@
                                     <option value="FALSE">Nonaktif</option>
                                 </select>
                             </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Tampilkan di Halaman Promo</label>
+                            <select id="banner-show-promo" class="w-full p-3 border border-gray-200 rounded-xl outline-none focus:border-green-500">
+                                <option value="TRUE">Ya</option>
+                                <option value="FALSE">Tidak</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">Banner akan muncul di halaman /promo jika diaktifkan</p>
                         </div>
                         
                         <!-- Preview -->

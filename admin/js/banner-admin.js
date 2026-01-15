@@ -209,11 +209,14 @@ async function saveBanner() {
     const title = document.getElementById('banner-title').value.trim();
     const imageUrl = document.getElementById('banner-image-url').value.trim();
     const redirectUrl = document.getElementById('banner-redirect-url').value.trim();
+    const promoDescription = document.getElementById('banner-promo-description')?.value.trim() || '';
+    const promoProducts = document.getElementById('banner-promo-products')?.value.trim() || '';
+    const showInPromoPage = document.getElementById('banner-show-promo')?.value || 'FALSE';
     const order = parseInt(document.getElementById('banner-order').value) || 1;
     const active = document.getElementById('banner-active').value;
     
-    if (!title || !imageUrl || !redirectUrl) {
-        showNotification('Semua field wajib diisi', 'error');
+    if (!title || !imageUrl) {
+        showNotification('Judul dan URL gambar wajib diisi', 'error');
         return;
     }
     
@@ -221,6 +224,9 @@ async function saveBanner() {
         title,
         image_url: imageUrl,
         redirect_url: redirectUrl,
+        promo_description: promoDescription,
+        promo_products: promoProducts,
+        show_in_promo_page: showInPromoPage,
         order,
         active,
         clicks: 0
