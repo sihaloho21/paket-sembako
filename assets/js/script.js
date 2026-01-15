@@ -409,10 +409,15 @@ function showSuccessNotification(orderId) {
     
     // Create notification card
     const notification = document.createElement('div');
-    notification.className = 'bg-white rounded-2xl shadow-2xl p-8 max-w-sm mx-4 text-center transform scale-95';
+    notification.className = 'bg-white rounded-2xl shadow-2xl p-8 max-w-sm mx-4 text-center transform scale-95 relative';
     notification.style.animation = 'scaleIn 0.3s ease-out forwards';
     
     notification.innerHTML = `
+        <button onclick="this.closest('.fixed').remove()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition p-1 rounded-full hover:bg-gray-100">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
         <div class="mb-4">
             <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -423,13 +428,14 @@ function showSuccessNotification(orderId) {
             <p class="text-gray-600 mb-4">Order ID: <span class="font-mono font-semibold text-green-600">${orderId}</span></p>
             <p class="text-sm text-gray-500 mb-6">Pesanan Anda telah tercatat dan akan segera diproses. Silakan lanjutkan ke WhatsApp untuk konfirmasi.</p>
         </div>
-        <div class="flex items-center justify-center gap-2 text-green-600 text-sm font-semibold">
+        <div class="flex items-center justify-center gap-2 text-green-600 text-sm font-semibold mb-4">
             <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
             <span>Membuka WhatsApp...</span>
         </div>
+        <p class="text-xs text-gray-400">Notifikasi akan tertutup otomatis dalam <span id="countdown-timer">10</span> detik</p>
     `;
     
     overlay.appendChild(notification);
@@ -448,15 +454,45 @@ function showSuccessNotification(orderId) {
                 from { transform: scale(0.95); opacity: 0; }
                 to { transform: scale(1); opacity: 1; }
             }
+            @keyframes fadeOut {
+                from { opacity: 1; }
+                to { opacity: 0; }
+            }
         `;
         document.head.appendChild(style);
     }
     
-    // Auto remove after 4 seconds
-    setTimeout(() => {
+    // Countdown timer
+    let countdown = 10;
+    const countdownEl = document.getElementById('countdown-timer');
+    const countdownInterval = setInterval(() => {
+        countdown--;
+        if (countdownEl) {
+            countdownEl.textContent = countdown;
+        }
+        if (countdown <= 0) {
+            clearInterval(countdownInterval);
+        }
+    }, 1000);
+    
+    // Auto remove after 10 seconds
+    const autoCloseTimeout = setTimeout(() => {
         overlay.style.animation = 'fadeOut 0.3s ease-out';
-        setTimeout(() => overlay.remove(), 300);
-    }, 4000);
+        setTimeout(() => {
+            overlay.remove();
+            clearInterval(countdownInterval);
+        }, 300);
+    }, 10000);
+    
+    // Allow manual close (also clear timeout)
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            clearTimeout(autoCloseTimeout);
+            clearInterval(countdownInterval);
+            overlay.style.animation = 'fadeOut 0.3s ease-out';
+            setTimeout(() => overlay.remove(), 300);
+        }
+    });
 }
 
 function saveCart() {
