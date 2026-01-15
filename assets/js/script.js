@@ -1,4 +1,27 @@
-let API_URL = CONFIG.getMainApiUrl();
+/**
+ * Get API URL from localStorage (set by admin) or fallback to CONFIG
+ * This allows admin to change API dynamically without code changes
+ */
+function getApiUrl() {
+    // Use CONFIG.getMainApiUrl() which handles localStorage with correct key
+    const apiUrl = CONFIG.getMainApiUrl();
+    console.log('Using API URL:', apiUrl);
+    return apiUrl;
+}
+
+let API_URL = getApiUrl();
+
+/**
+ * Refresh API_URL from localStorage
+ * Call this after admin saves new API settings
+ */
+function refreshApiUrl() {
+    API_URL = getApiUrl();
+    console.log('API URL refreshed:', API_URL);
+    // Reload products with new API
+    fetchProducts();
+}
+
 let cart = JSON.parse(localStorage.getItem('sembako_cart')) || [];
 let allProducts = [];
 let currentCategory = 'Semua';
@@ -12,6 +35,7 @@ let selectedVariation = null;
 
 async function fetchProducts() {
     try {
+        API_URL = getApiUrl(); // Refresh API URL from localStorage
         console.log('Fetching products from:', API_URL);
         const response = await fetch(API_URL);
         if (!response.ok) throw new Error('Network response was not ok');
@@ -1186,6 +1210,7 @@ function sendToWA() {
         point_processed: 'No'
     };
 
+    API_URL = getApiUrl(); // Refresh API URL from localStorage
     fetch(`${API_URL}?sheet=orders`, {
         method: 'POST',
         mode: 'cors',
@@ -1242,6 +1267,7 @@ async function fetchTukarPoin() {
     if (!rewardList) return;
 
     try {
+        API_URL = getApiUrl(); // Refresh API URL from localStorage
         const response = await fetch(`${API_URL}?sheet=tukar_poin`);
         if (!response.ok) throw new Error('Network response was not ok');
         const rewards = await response.json();
@@ -1332,6 +1358,7 @@ function checkUserPoints() {
     }
 
     const normalizedPhone = normalizePhone(phone);
+    API_URL = getApiUrl(); // Refresh API URL from localStorage
     const apiUrl = `${API_URL}?sheet=user_points`;
 
     // Show loading state
@@ -1395,6 +1422,7 @@ async function claimReward(rewardId) {
     }
 
     try {
+        API_URL = getApiUrl(); // Refresh API URL from localStorage
         // 1. Get reward details to know the required points
         const rewardRes = await fetch(`${API_URL}/search?sheet=tukar_poin&id=${rewardId}`);
         const rewardData = await rewardRes.json();
@@ -1514,6 +1542,7 @@ async function showConfirmTukarModal(rewardId) {
     }
 
     try {
+        API_URL = getApiUrl(); // Refresh API URL from localStorage
         // Fetch reward details
         const rewardRes = await fetch(`${API_URL}/search?sheet=tukar_poin&id=${rewardId}`);
         const rewardData = await rewardRes.json();
@@ -1628,6 +1657,7 @@ async function processClaimReward(rewardId, customerName) {
     const userPoints = parseFloat(sessionStorage.getItem('user_points')) || 0;
     
     try {
+        API_URL = getApiUrl(); // Refresh API URL from localStorage
         // 1. Get reward details
         const rewardRes = await fetch(`${API_URL}/search?sheet=tukar_poin&id=${rewardId}`);
         const rewardData = await rewardRes.json();
@@ -1857,6 +1887,7 @@ async function renderWishlistItems() {
     // Ambil semua produk dari global variable atau fetch ulang
     let allProducts = [];
     try {
+        API_URL = getApiUrl(); // Refresh API URL from localStorage
         const response = await fetch(`${API_URL}?sheet=products`);
         allProducts = await response.json();
     } catch (error) {
