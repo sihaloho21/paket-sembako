@@ -32,14 +32,15 @@
 
 /* Slide */
 .carousel-slide {
-    flex: 0 0 80%;
+    flex: 0 0 90%;
     padding: 0 0.5rem;
     box-sizing: border-box;
 }
 
 @media (min-width: 768px) {
     .carousel-slide {
-        flex: 0 0 40%;
+        flex: 0 0 45%;
+        padding: 0 0.75rem;
     }
 }
 

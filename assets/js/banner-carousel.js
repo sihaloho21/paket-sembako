@@ -249,13 +249,15 @@ class BundleCarousel {
         // Determine slides per view based on screen width
         const isMobile = window.innerWidth < 768;
         const slidesPerView = isMobile ? 1 : 2;
-        const slideWidth = 100 / slidesPerView;
-        const peekAmount = 10; // 10% peek on each side
+        
+        // Calculate slide width based on CSS flex-basis
+        // Mobile: 90% per slide, Desktop: 45% per slide
+        const slideWidth = isMobile ? 90 : 45;
+        const peekAmount = isMobile ? 5 : 5; // 5% peek on each side
 
         // Calculate offset with peek
         const baseOffset = -(this.currentIndex * slideWidth);
-        const peekOffset = isMobile ? peekAmount / 2 : peekAmount;
-        const offset = baseOffset + peekOffset;
+        const offset = baseOffset + peekAmount;
 
         track.style.transform = `translateX(${offset}%)`;
 
