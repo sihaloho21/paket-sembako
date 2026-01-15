@@ -814,6 +814,12 @@
     <script src="assets/js/tiered-pricing-logic.js"></script>
     <script src="assets/js/slider-enhanced.js"></script>
     <script src="assets/js/banner-carousel.js"></script>
+    <script>
+        // Fetch settings from bootstrap API before loading main script
+        (async () => {
+            await CONFIG.fetchSettings();
+        })();
+    </script>
     <script src="assets/js/script.js"></script>
 </body>
 </html>

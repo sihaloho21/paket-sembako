@@ -761,6 +761,7 @@ function loadSettings() {
     const config = CONFIG.getAllConfig();
     
     // API Settings
+    document.getElementById('settings-bootstrap-api').value = CONFIG.getBootstrapApiUrl();
     document.getElementById('settings-main-api').value = config.mainApi;
     document.getElementById('settings-admin-api').value = config.adminApi;
     
@@ -805,7 +806,8 @@ function renderRewardOverrides(overrides) {
     `).join('');
 }
 
-function saveSettings() {
+async function saveSettings() {
+    const bootstrapApi = document.getElementById('settings-bootstrap-api').value.trim();
     const mainApi = document.getElementById('settings-main-api').value.trim();
     const adminApi = document.getElementById('settings-admin-api').value.trim();
     
@@ -814,7 +816,12 @@ function saveSettings() {
         return;
     }
 
-    // Save API URLs
+    // Save Bootstrap API URL
+    if (bootstrapApi) {
+        CONFIG.setBootstrapApiUrl(bootstrapApi);
+    }
+    
+    // Save API URLs to localStorage
     CONFIG.setMainApiUrl(mainApi);
     CONFIG.setAdminApiUrl(adminApi);
     API_URL = adminApi; // Update local variable immediately
@@ -823,6 +830,32 @@ function saveSettings() {
     if (typeof ApiService !== 'undefined') {
         ApiService.clearCache();
         console.log('✅ Cache cleared after API URL change');
+    }
+    
+    // Save to Bootstrap API settings sheet (if configured)
+    if (bootstrapApi) {
+        try {
+            console.log('🔄 [ADMIN] Saving settings to bootstrap API...');
+            
+            // Update main_api_url
+            await fetch(`${bootstrapApi}/key/main_api_url?sheet=settings`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: { value: mainApi } })
+            });
+            
+            // Update admin_api_url
+            await fetch(`${bootstrapApi}/key/admin_api_url?sheet=settings`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: { value: adminApi } })
+            });
+            
+            console.log('✅ [ADMIN] Settings saved to bootstrap API');
+        } catch (error) {
+            console.error('❌ [ADMIN] Failed to save to bootstrap API:', error);
+            // Continue anyway, localStorage is already saved
+        }
     }
     
     const targetDay = parseInt(document.getElementById('gajian-target-day').value);
@@ -1310,4 +1343,64 @@ function showApiStatus(element, type, message) {
     }
     
     element.textContent = message;
+}
+
+
+// ============ BOOTSTRAP API TEST FUNCTION ============
+async function testBootstrapApi() {
+    const apiUrl = document.getElementById('settings-bootstrap-api').value.trim();
+    const statusEl = document.getElementById('bootstrap-api-status');
+    
+    if (!apiUrl) {
+        statusEl.className = 'mt-2 p-2 rounded-lg text-xs font-bold bg-yellow-100 text-yellow-700';
+        statusEl.textContent = '⚠️ Masukkan URL API terlebih dahulu';
+        statusEl.classList.remove('hidden');
+        return;
+    }
+    
+    // Validate URL format
+    if (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
+        statusEl.className = 'mt-2 p-2 rounded-lg text-xs font-bold bg-red-100 text-red-700';
+        statusEl.textContent = '❌ URL harus dimulai dengan http:// atau https://';
+        statusEl.classList.remove('hidden');
+        return;
+    }
+    
+    statusEl.className = 'mt-2 p-2 rounded-lg text-xs font-bold bg-yellow-100 text-yellow-700';
+    statusEl.textContent = '⏳ Testing Bootstrap API...';
+    statusEl.classList.remove('hidden');
+    
+    try {
+        console.log('API Test:', apiUrl + '?sheet=settings');
+        const response = await fetch(apiUrl + '?sheet=settings');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Response:', data);
+        
+        if (!Array.isArray(data)) {
+            throw new Error('Response bukan array. Pastikan sheet "settings" ada.');
+        }
+        
+        // Check if settings sheet has correct structure
+        const hasKey = data.some(item => item.key);
+        const hasValue = data.some(item => item.value);
+        
+        if (!hasKey || !hasValue) {
+            statusEl.className = 'mt-2 p-2 rounded-lg text-xs font-bold bg-yellow-100 text-yellow-700';
+            statusEl.textContent = `⚠️ Sheet ditemukan tapi struktur belum benar. Pastikan ada kolom "key" dan "value".`;
+            return;
+        }
+        
+        statusEl.className = 'mt-2 p-2 rounded-lg text-xs font-bold bg-green-100 text-green-700';
+        statusEl.textContent = `✅ Bootstrap API Valid! Ditemukan ${data.length} settings.`;
+        
+    } catch (error) {
+        console.error('API Test Error:', error);
+        statusEl.className = 'mt-2 p-2 rounded-lg text-xs font-bold bg-red-100 text-red-700';
+        statusEl.textContent = `❌ API Error: ${error.message}`;
+    }
 }

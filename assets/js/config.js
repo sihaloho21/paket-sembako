@@ -13,6 +13,7 @@ const CONFIG = {
     
     // Storage keys
     STORAGE_KEYS: {
+        BOOTSTRAP_API: 'sembako_bootstrap_api_url',
         MAIN_API: 'sembako_main_api_url',
         ADMIN_API: 'sembako_admin_api_url',
         GAJIAN_CONFIG: 'sembako_gajian_config',
@@ -20,20 +21,119 @@ const CONFIG = {
         STORE_CLOSED: 'sembako_store_closed'
     },
     
+    // Session storage for fetched settings
+    _settingsFetched: false,
+    
+    /**
+     * Mendapatkan Bootstrap API URL
+     * @returns {string} Bootstrap API URL
+     */
+    getBootstrapApiUrl() {
+        return localStorage.getItem(this.STORAGE_KEYS.BOOTSTRAP_API) || '';
+    },
+    
+    /**
+     * Menyimpan Bootstrap API URL
+     * @param {string} url - Bootstrap API URL
+     */
+    setBootstrapApiUrl(url) {
+        if (url && url.trim()) {
+            localStorage.setItem(this.STORAGE_KEYS.BOOTSTRAP_API, url.trim());
+            return true;
+        }
+        return false;
+    },
+    
+    /**
+     * Fetch settings dari Bootstrap API
+     * @returns {Promise<boolean>} true jika berhasil
+     */
+    async fetchSettings() {
+        const bootstrapApi = this.getBootstrapApiUrl();
+        
+        // Jika tidak ada bootstrap API, skip
+        if (!bootstrapApi) {
+            console.log('⚠️ [CONFIG] No bootstrap API configured, using localStorage');
+            return false;
+        }
+        
+        // Jika sudah fetch di session ini, skip
+        if (this._settingsFetched) {
+            console.log('✅ [CONFIG] Settings already fetched this session');
+            return true;
+        }
+        
+        try {
+            console.log('🔄 [CONFIG] Fetching settings from bootstrap API...');
+            const response = await fetch(`${bootstrapApi}?sheet=settings`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const settings = await response.json();
+            console.log('📥 [CONFIG] Settings received:', settings);
+            
+            // Parse settings array menjadi object
+            const settingsObj = {};
+            settings.forEach(item => {
+                settingsObj[item.key] = item.value;
+            });
+            
+            // Update sessionStorage dengan settings dari server
+            if (settingsObj.main_api_url) {
+                sessionStorage.setItem('runtime_main_api_url', settingsObj.main_api_url);
+                console.log('✅ [CONFIG] Main API URL updated:', settingsObj.main_api_url);
+            }
+            
+            if (settingsObj.admin_api_url) {
+                sessionStorage.setItem('runtime_admin_api_url', settingsObj.admin_api_url);
+                console.log('✅ [CONFIG] Admin API URL updated:', settingsObj.admin_api_url);
+            }
+            
+            this._settingsFetched = true;
+            return true;
+            
+        } catch (error) {
+            console.error('❌ [CONFIG] Failed to fetch settings:', error);
+            return false;
+        }
+    },
+    
     /**
      * Mendapatkan URL API untuk halaman utama
-     * @returns {string} URL API dari localStorage atau default
+     * Priority: sessionStorage (from bootstrap) > localStorage (manual) > default
+     * @returns {string} URL API
      */
     getMainApiUrl() {
-        return localStorage.getItem(this.STORAGE_KEYS.MAIN_API) || this.DEFAULTS.MAIN_API;
+        // Priority 1: Runtime dari bootstrap API
+        const runtime = sessionStorage.getItem('runtime_main_api_url');
+        if (runtime) return runtime;
+        
+        // Priority 2: Manual dari localStorage
+        const manual = localStorage.getItem(this.STORAGE_KEYS.MAIN_API);
+        if (manual) return manual;
+        
+        // Priority 3: Default
+        return this.DEFAULTS.MAIN_API;
     },
     
     /**
      * Mendapatkan URL API untuk halaman admin
-     * @returns {string} URL API dari localStorage atau default
+     * Priority: sessionStorage (from bootstrap) > localStorage (manual) > default
+     * @returns {string} URL API
      */
     getAdminApiUrl() {
-        return localStorage.getItem(this.STORAGE_KEYS.ADMIN_API) || this.DEFAULTS.ADMIN_API;
+        // Priority 1: Runtime dari bootstrap API
+        const runtime = sessionStorage.getItem('runtime_admin_api_url');
+        if (runtime) return runtime;
+        
+        // Priority 2: Manual dari localStorage
+        const manual = localStorage.getItem(this.STORAGE_KEYS.ADMIN_API);
+        if (manual) return manual;
+        
+        // Priority 3: Default
+        return this.DEFAULTS.ADMIN_API;
     },
     
     /**
