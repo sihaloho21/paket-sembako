@@ -401,6 +401,64 @@ function showToast(message) {
     setTimeout(() => toast.remove(), 3000);
 }
 
+function showSuccessNotification(orderId) {
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] animate-fade-in';
+    overlay.style.animation = 'fadeIn 0.3s ease-out';
+    
+    // Create notification card
+    const notification = document.createElement('div');
+    notification.className = 'bg-white rounded-2xl shadow-2xl p-8 max-w-sm mx-4 text-center transform scale-95';
+    notification.style.animation = 'scaleIn 0.3s ease-out forwards';
+    
+    notification.innerHTML = `
+        <div class="mb-4">
+            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Pesanan Berhasil Dikirim!</h3>
+            <p class="text-gray-600 mb-4">Order ID: <span class="font-mono font-semibold text-green-600">${orderId}</span></p>
+            <p class="text-sm text-gray-500 mb-6">Pesanan Anda telah tercatat dan akan segera diproses. Silakan lanjutkan ke WhatsApp untuk konfirmasi.</p>
+        </div>
+        <div class="flex items-center justify-center gap-2 text-green-600 text-sm font-semibold">
+            <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Membuka WhatsApp...</span>
+        </div>
+    `;
+    
+    overlay.appendChild(notification);
+    document.body.appendChild(overlay);
+    
+    // Add CSS animations if not exist
+    if (!document.getElementById('success-notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'success-notification-styles';
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes scaleIn {
+                from { transform: scale(0.95); opacity: 0; }
+                to { transform: scale(1); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+        overlay.style.animation = 'fadeOut 0.3s ease-out';
+        setTimeout(() => overlay.remove(), 300);
+    }, 4000);
+}
+
 function saveCart() {
     localStorage.setItem('sembako_cart', JSON.stringify(cart));
 }
@@ -1085,14 +1143,19 @@ function sendToWA() {
         console.error('Error logging order:', err);
     })
     .finally(() => {
-        window.open(waUrl, '_blank');
-        
         // Clear cart after order
         cart = [];
         saveCart();
         updateCartUI();
         closeOrderModal();
-        showToast('Pesanan berhasil dikirim!');
+        
+        // Show success notification immediately
+        showSuccessNotification(orderId);
+        
+        // Delay WhatsApp redirect slightly so user sees the notification
+        setTimeout(() => {
+            window.open(waUrl, '_blank');
+        }, 800);
         
         // Re-enable button after modal closes (reset state)
         if (sendButton) {
