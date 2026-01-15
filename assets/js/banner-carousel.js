@@ -1,165 +1,256 @@
 /**
- * Banner Carousel - Peek Design & Modal Integration
+ * Paket Bundling Carousel
+ * Menampilkan paket sembako bundling di carousel
  */
 
-class BannerCarousel {
+class BundleCarousel {
     constructor() {
-        this.banners = [];
+        this.bundles = [];
         this.currentIndex = 0;
         this.autoRotateInterval = null;
-        this.isDesktop = window.innerWidth > 768;
+        this.isTransitioning = false;
         this.init();
     }
 
     async init() {
-        await this.fetchBanners();
-        this.render();
-        this.setupEventListeners();
-        if (this.banners.length > 1) this.startAutoRotate();
+        await this.fetchBundles();
+        if (this.bundles.length > 0) {
+            this.render();
+            this.setupEventListeners();
+            this.startAutoRotate();
+        }
     }
 
-    async fetchBanners() {
+    async fetchBundles() {
         try {
-            const response = await fetch(`${CONFIG.getMainApiUrl()}?sheet=Banners`);
-            const data = await response.json();
-            this.banners = data.filter(b => b.active === 'TRUE').sort((a, b) => a.order - b.order);
+            const response = await fetch(CONFIG.getMainApiUrl());
+            const allProducts = await response.json();
+            
+            // Filter produk dengan kategori "Paket Hemat"
+            this.bundles = allProducts.filter(p => 
+                p.kategori && p.kategori.toLowerCase().includes('paket')
+            );
+            
+            console.log(`✅ Loaded ${this.bundles.length} bundle packages`);
         } catch (error) {
-            console.error('Error fetching banners:', error);
-            this.banners = [];
+            console.error('❌ Error fetching bundles:', error);
+            this.bundles = [];
         }
     }
 
     render() {
-        const container = document.getElementById('banner-carousel-container');
-        if (!container) return;
-
-        if (this.banners.length === 0) {
-            container.innerHTML = `
-                <div class="banner-empty-state">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                    </svg>
-                    <p>Tidak ada banner promosi saat ini</p>
-                </div>
-            `;
+        const container = document.getElementById('bundle-carousel-container');
+        if (!container || this.bundles.length === 0) {
+            if (container) container.style.display = 'none';
             return;
         }
 
+        container.style.display = 'block';
         container.innerHTML = `
-            <div class="banner-carousel">
-                <div class="banner-carousel-track" id="banner-track">
-                    ${this.banners.map((banner, index) => `
-                        <div class="banner-slide" data-index="${index}" data-banner-id="${banner.id}">
-                            <img src="${banner.image_url}" alt="${banner.title}" loading="${index < 2 ? 'eager' : 'lazy'}">
-                        </div>
-                    `).join('')}
+            <div class="bundle-carousel-wrapper">
+                <button class="carousel-nav carousel-prev" id="carousel-prev" aria-label="Previous">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                
+                <div class="carousel-track-container">
+                    <div class="carousel-track" id="carousel-track">
+                        ${this.bundles.map((bundle, index) => `
+                            <div class="carousel-slide" data-index="${index}">
+                                <div class="bundle-card" onclick="bundleCarousel.openBundleModal(${index})">
+                                    <div class="bundle-image-container">
+                                        <img src="${bundle.gambar}" alt="${bundle.nama}" class="bundle-image">
+                                        ${bundle.stok_tersedia ? `
+                                            <div class="bundle-badge">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                </svg>
+                                                Stok: ${bundle.stok_tersedia}
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    <div class="bundle-info">
+                                        <h3 class="bundle-title">${bundle.nama}</h3>
+                                        <div class="bundle-price">
+                                            <span class="price-label">Harga Tunai</span>
+                                            <span class="price-value">Rp ${parseInt(bundle.harga_cash).toLocaleString('id-ID')}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
-                ${this.banners.length > 1 ? `
-                    <button class="banner-nav-btn prev" id="banner-prev">
-                        <svg fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                    </button>
-                    <button class="banner-nav-btn next" id="banner-next">
-                        <svg fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                    </button>
-                ` : ''}
+                
+                <button class="carousel-nav carousel-next" id="carousel-next" aria-label="Next">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
             </div>
-            ${this.banners.length > 1 ? `
-                <div class="banner-dots" id="banner-dots">
-                    ${this.banners.map((_, index) => `
-                        <button class="banner-dot ${index === 0 ? 'active' : ''}" data-index="${index}"></button>
-                    `).join('')}
-                </div>
-            ` : ''}
+            
+            <div class="carousel-dots" id="carousel-dots">
+                ${this.bundles.map((_, index) => `
+                    <button class="carousel-dot ${index === 0 ? 'active' : ''}" data-index="${index}" aria-label="Go to slide ${index + 1}"></button>
+                `).join('')}
+            </div>
         `;
 
-        this.updatePosition();
+        this.updateCarousel();
     }
 
     setupEventListeners() {
-        const prevBtn = document.getElementById('banner-prev');
-        const nextBtn = document.getElementById('banner-next');
-        const dots = document.querySelectorAll('.banner-dot');
-        const slides = document.querySelectorAll('.banner-slide');
+        const prevBtn = document.getElementById('carousel-prev');
+        const nextBtn = document.getElementById('carousel-next');
+        const dots = document.querySelectorAll('.carousel-dot');
 
-        if (prevBtn) prevBtn.addEventListener('click', () => this.prev());
-        if (nextBtn) nextBtn.addEventListener('click', () => this.next());
-        
-        dots.forEach(dot => {
-            dot.addEventListener('click', (e) => {
-                this.goToSlide(parseInt(e.target.dataset.index));
-            });
-        });
-
-        slides.forEach(slide => {
-            slide.addEventListener('click', () => {
-                const bannerId = slide.dataset.bannerId;
-                const banner = this.banners.find(b => b.id == bannerId);
-                if (banner) {
-                    this.trackClick(bannerId);
-                    this.openPromoModal(banner);
-                }
-            });
-        });
-
-        const carousel = document.querySelector('.banner-carousel');
-        if (carousel) {
-            carousel.addEventListener('mouseenter', () => this.stopAutoRotate());
-            carousel.addEventListener('mouseleave', () => {
-                if (this.banners.length > 1) this.startAutoRotate();
-            });
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => this.prev());
         }
 
-        window.addEventListener('resize', () => {
-            const wasDesktop = this.isDesktop;
-            this.isDesktop = window.innerWidth > 768;
-            if (wasDesktop !== this.isDesktop) this.updatePosition();
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => this.next());
+        }
+
+        dots.forEach(dot => {
+            dot.addEventListener('click', (e) => {
+                const index = parseInt(e.target.dataset.index);
+                this.goToSlide(index);
+            });
         });
+
+        // Touch/swipe support
+        const track = document.getElementById('carousel-track');
+        if (track) {
+            let startX = 0;
+            let currentX = 0;
+            let isDragging = false;
+
+            track.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                isDragging = true;
+                this.stopAutoRotate();
+            });
+
+            track.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                currentX = e.touches[0].clientX;
+            });
+
+            track.addEventListener('touchend', () => {
+                if (!isDragging) return;
+                isDragging = false;
+                
+                const diff = startX - currentX;
+                if (Math.abs(diff) > 50) {
+                    if (diff > 0) {
+                        this.next();
+                    } else {
+                        this.prev();
+                    }
+                }
+                
+                this.startAutoRotate();
+            });
+        }
     }
 
-    updatePosition() {
-        const track = document.getElementById('banner-track');
+    updateCarousel() {
+        const track = document.getElementById('carousel-track');
+        const dots = document.querySelectorAll('.carousel-dot');
+        const prevBtn = document.getElementById('carousel-prev');
+        const nextBtn = document.getElementById('carousel-next');
+
         if (!track) return;
 
-        const slideWidth = this.isDesktop ? 50 : 80;
-        const gap = 1;
-        const offset = this.currentIndex * (slideWidth + gap);
-        
-        track.style.transform = `translateX(calc(-${offset}% - ${this.currentIndex * gap}rem))`;
-        this.updateDots();
-    }
+        // Determine slides per view based on screen width
+        const isMobile = window.innerWidth < 768;
+        const slidesPerView = isMobile ? 1 : 2;
+        const slideWidth = 100 / slidesPerView;
+        const peekAmount = 10; // 10% peek on each side
 
-    updateDots() {
-        const dots = document.querySelectorAll('.banner-dot');
+        // Calculate offset with peek
+        const baseOffset = -(this.currentIndex * slideWidth);
+        const peekOffset = isMobile ? peekAmount / 2 : peekAmount;
+        const offset = baseOffset + peekOffset;
+
+        track.style.transform = `translateX(${offset}%)`;
+
+        // Update dots
         dots.forEach((dot, index) => {
             dot.classList.toggle('active', index === this.currentIndex);
         });
+
+        // Update navigation buttons visibility
+        if (prevBtn && nextBtn) {
+            // Always show both buttons, but handle edge cases in next/prev methods
+            prevBtn.style.opacity = this.currentIndex === 0 ? '0.5' : '1';
+            nextBtn.style.opacity = this.currentIndex >= this.bundles.length - slidesPerView ? '0.5' : '1';
+        }
     }
 
     next() {
-        this.currentIndex = (this.currentIndex + 1) % this.banners.length;
-        this.updatePosition();
-        this.resetAutoRotate();
+        if (this.isTransitioning) return;
+        
+        const isMobile = window.innerWidth < 768;
+        const slidesPerView = isMobile ? 1 : 2;
+        const maxIndex = this.bundles.length - slidesPerView;
+
+        if (this.currentIndex >= maxIndex) {
+            // Loop back to start
+            this.currentIndex = 0;
+        } else {
+            this.currentIndex++;
+        }
+
+        this.isTransitioning = true;
+        this.updateCarousel();
+        setTimeout(() => {
+            this.isTransitioning = false;
+        }, 500);
     }
 
     prev() {
-        this.currentIndex = (this.currentIndex - 1 + this.banners.length) % this.banners.length;
-        this.updatePosition();
-        this.resetAutoRotate();
+        if (this.isTransitioning) return;
+        
+        const isMobile = window.innerWidth < 768;
+        const slidesPerView = isMobile ? 1 : 2;
+        const maxIndex = this.bundles.length - slidesPerView;
+
+        if (this.currentIndex <= 0) {
+            // Loop to end
+            this.currentIndex = maxIndex;
+        } else {
+            this.currentIndex--;
+        }
+
+        this.isTransitioning = true;
+        this.updateCarousel();
+        setTimeout(() => {
+            this.isTransitioning = false;
+        }, 500);
     }
 
     goToSlide(index) {
+        if (this.isTransitioning) return;
+        
         this.currentIndex = index;
-        this.updatePosition();
-        this.resetAutoRotate();
+        this.isTransitioning = true;
+        this.updateCarousel();
+        setTimeout(() => {
+            this.isTransitioning = false;
+        }, 500);
+        
+        this.stopAutoRotate();
+        this.startAutoRotate();
     }
 
     startAutoRotate() {
         this.stopAutoRotate();
-        this.autoRotateInterval = setInterval(() => this.next(), 3000);
+        this.autoRotateInterval = setInterval(() => {
+            this.next();
+        }, 3000);
     }
 
     stopAutoRotate() {
@@ -169,162 +260,248 @@ class BannerCarousel {
         }
     }
 
-    resetAutoRotate() {
-        if (this.banners.length > 1) {
-            this.stopAutoRotate();
-            this.startAutoRotate();
+    openBundleModal(index) {
+        const bundle = this.bundles[index];
+        if (!bundle) return;
+
+        // Track click
+        this.trackClick(bundle.id);
+
+        // Parse bundle items if exists
+        let bundleItems = [];
+        if (bundle.bundle_items) {
+            try {
+                bundleItems = bundle.bundle_items.split(',').map(item => item.trim());
+            } catch (e) {
+                console.error('Error parsing bundle items:', e);
+            }
         }
-    }
 
-    async trackClick(bannerId) {
-        try {
-            const banner = this.banners.find(b => b.id == bannerId);
-            const newClicks = parseInt(banner.clicks || 0) + 1;
-            
-            await fetch(`${CONFIG.getMainApiUrl()}/id/${bannerId}?sheet=Banners`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ clicks: newClicks })
-            });
-            
-            banner.clicks = newClicks;
-        } catch (error) {
-            console.error('Error tracking click:', error);
-        }
-    }
-
-    async openPromoModal(banner) {
-        const productNames = banner.promo_products ? banner.promo_products.split(',').map(p => p.trim()) : [];
-        const products = await this.fetchRelatedProducts(productNames);
-
+        // Create modal
         const modal = document.createElement('div');
-        modal.id = 'promo-modal';
+        modal.id = 'bundle-modal';
         modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
         modal.style.animation = 'fadeIn 0.3s ease';
+        
         modal.innerHTML = `
-            <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" style="animation: slideUp 0.3s ease;">
+            <div class="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto" style="animation: slideUp 0.3s ease;">
+                <!-- Header -->
                 <div class="sticky top-0 bg-white border-b p-4 flex justify-between items-center z-10">
-                    <h2 class="text-xl font-bold text-gray-800">${banner.title}</h2>
-                    <button onclick="document.getElementById('promo-modal').remove()" class="text-gray-500 hover:text-gray-700 transition">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">
+                            ${bundle.kategori || 'Paket Hemat'}
+                        </span>
+                        ${bundle.stok_tersedia ? `
+                            <span class="text-gray-600 text-xs">Stok: ${bundle.stok_tersedia}</span>
+                        ` : ''}
+                    </div>
+                    <button onclick="document.getElementById('bundle-modal').remove()" class="text-gray-500 hover:text-gray-700 transition">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                 </div>
-                
+
+                <!-- Content -->
                 <div class="p-6">
-                    <img src="${banner.image_url}" alt="${banner.title}" class="w-full rounded-lg mb-4 shadow-lg">
-                    
-                    ${banner.promo_description ? `
-                        <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
-                            <h3 class="font-semibold text-green-800 mb-2 flex items-center gap-2">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                Deskripsi Promo
-                            </h3>
-                            <p class="text-gray-700 leading-relaxed">${banner.promo_description}</p>
+                    <!-- Image Carousel -->
+                    <div class="mb-4 relative">
+                        <img src="${bundle.gambar}" alt="${bundle.nama}" class="w-full h-64 object-cover rounded-xl">
+                    </div>
+
+                    <!-- Title -->
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">${bundle.nama}</h2>
+
+                    <!-- Discount Badge -->
+                    ${bundle.diskon_persen ? `
+                        <div class="inline-flex items-center gap-2 bg-red-50 text-red-600 px-3 py-1 rounded-lg text-sm font-bold mb-3">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Hemat Rp ${parseInt(bundle.diskon_persen).toLocaleString('id-ID')} dibanding harga pasar
                         </div>
                     ` : ''}
-                    
-                    ${products.length > 0 ? `
-                        <div class="mb-6">
-                            <h3 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+
+                    <!-- Bundle Items -->
+                    ${bundleItems.length > 0 ? `
+                        <div class="mb-4 p-4 bg-green-50 rounded-xl border border-green-200">
+                            <h3 class="font-bold text-green-800 mb-3 flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                                 </svg>
-                                Pilih Produk Promo
+                                Deskripsi / Isi Paket:
                             </h3>
-                            <div class="space-y-2" id="promo-products">
-                                ${products.map(product => `
-                                    <label class="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition">
-                                        <input type="checkbox" class="promo-product-checkbox w-5 h-5 text-green-600 rounded" data-product='${JSON.stringify(product)}'>
-                                        <img src="${product.gambar}" alt="${product.nama}" class="w-16 h-16 object-cover rounded border">
-                                        <div class="flex-1">
-                                            <p class="font-medium text-gray-800 text-sm">${product.nama}</p>
-                                            <p class="text-green-600 font-bold">Rp ${parseInt(product.harga_cash).toLocaleString('id-ID')}</p>
-                                        </div>
-                                    </label>
+                            <div class="space-y-2">
+                                ${bundleItems.map(item => `
+                                    <div class="flex items-start gap-2 text-gray-700">
+                                        <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                                        </svg>
+                                        <span class="text-sm">${item}</span>
+                                    </div>
                                 `).join('')}
                             </div>
                         </div>
                     ` : ''}
-                    
-                    <button onclick="bannerCarousel.addToOrder()" class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center gap-2">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M10.5 2.25a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM10.5 21.75a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM2.25 10.5a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5H3a.75.75 0 01-.75-.75zM21.75 10.5a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75z"/><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 9a.75.75 0 00-1.5 0v2.25H9a.75.75 0 000 1.5h2.25V15a.75.75 0 001.5 0v-2.25H15a.75.75 0 000-1.5h-2.25V9z" clip-rule="evenodd"/>
+
+                    <!-- Prices -->
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="p-4 bg-gray-50 rounded-xl">
+                            <p class="text-xs text-gray-600 mb-1">HARGA TUNAI</p>
+                            <p class="text-xl font-bold text-green-600">Rp ${parseInt(bundle.harga_cash).toLocaleString('id-ID')}</p>
+                        </div>
+                        <div class="p-4 bg-blue-50 rounded-xl">
+                            <p class="text-xs text-gray-600 mb-1">BAYAR GAJIAN</p>
+                            <p class="text-xl font-bold text-blue-600">Rp ${parseInt(bundle.harga_gajian).toLocaleString('id-ID')}</p>
+                            ${bundle.tenor_gajian ? `
+                                <p class="text-xs text-gray-500 mt-1">Hingga Tgl ${bundle.tenor_gajian}</p>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Quantity -->
+                    <div class="mb-4">
+                        <p class="font-bold text-gray-800 mb-2">Jumlah:</p>
+                        <div class="flex items-center gap-4">
+                            <button onclick="bundleCarousel.decreaseQuantity()" class="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-100 transition">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                                </svg>
+                            </button>
+                            <input type="number" id="bundle-quantity" value="1" min="1" class="w-16 text-center text-xl font-bold border border-gray-300 rounded-lg py-2">
+                            <button onclick="bundleCarousel.increaseQuantity()" class="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-100 transition">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Note -->
+                    <div class="mb-4 p-3 bg-blue-50 rounded-lg flex items-start gap-2 text-sm text-blue-800">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        Lengkapi Pesanan
-                    </button>
+                        <span>Tersedia untuk antar Nikomas & Ambil di Tempat</span>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="space-y-3">
+                        <button onclick="bundleCarousel.addToCart(${index})" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            + Keranjang
+                        </button>
+                        <button onclick="bundleCarousel.buyNow(${index})" class="w-full bg-white hover:bg-green-50 text-green-600 font-bold py-3 rounded-xl transition border-2 border-green-600">
+                            Beli Sekarang
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
-        
+
         document.body.appendChild(modal);
-        
-        // Close on backdrop click
         modal.addEventListener('click', (e) => {
             if (e.target === modal) modal.remove();
         });
+
+        // Stop auto-rotate when modal is open
+        this.stopAutoRotate();
     }
 
-    async fetchRelatedProducts(productNames) {
-        if (productNames.length === 0) return [];
+    increaseQuantity() {
+        const input = document.getElementById('bundle-quantity');
+        if (input) {
+            input.value = parseInt(input.value) + 1;
+        }
+    }
+
+    decreaseQuantity() {
+        const input = document.getElementById('bundle-quantity');
+        if (input && parseInt(input.value) > 1) {
+            input.value = parseInt(input.value) - 1;
+        }
+    }
+
+    addToCart(index) {
+        const bundle = this.bundles[index];
+        const quantity = parseInt(document.getElementById('bundle-quantity')?.value || 1);
         
+        // Add to cart (integrate with existing cart system)
+        if (typeof addToCart === 'function') {
+            addToCart(bundle, quantity);
+        }
+        
+        // Close modal
+        document.getElementById('bundle-modal')?.remove();
+        
+        // Show notification
+        alert(`${bundle.nama} (${quantity}x) ditambahkan ke keranjang!`);
+        
+        // Resume auto-rotate
+        this.startAutoRotate();
+    }
+
+    buyNow(index) {
+        const bundle = this.bundles[index];
+        const quantity = parseInt(document.getElementById('bundle-quantity')?.value || 1);
+        
+        // Close modal
+        document.getElementById('bundle-modal')?.remove();
+        
+        // Open order modal (integrate with existing order system)
+        if (typeof openOrderModal === 'function') {
+            openOrderModal(bundle, quantity);
+        } else {
+            // Fallback: add to cart and show cart
+            if (typeof addToCart === 'function') {
+                addToCart(bundle, quantity);
+            }
+            if (typeof toggleCart === 'function') {
+                toggleCart();
+            }
+        }
+        
+        // Resume auto-rotate
+        this.startAutoRotate();
+    }
+
+    async trackClick(bundleId) {
         try {
-            const response = await fetch(CONFIG.getMainApiUrl());
-            const allProducts = await response.json();
-            return allProducts.filter(p => productNames.includes(p.nama));
+            console.log(`📊 Bundle clicked: ${bundleId}`);
+            // Implement analytics tracking if needed
         } catch (error) {
-            console.error('Error fetching products:', error);
-            return [];
+            console.error('Error tracking click:', error);
         }
     }
 
-    addToOrder() {
-        const selectedProducts = [];
-        document.querySelectorAll('.promo-product-checkbox:checked').forEach(checkbox => {
-            selectedProducts.push(JSON.parse(checkbox.dataset.product));
-        });
-
-        if (selectedProducts.length === 0) {
-            alert('Silakan pilih minimal 1 produk');
-            return;
-        }
-
-        document.getElementById('promo-modal').remove();
-
-        selectedProducts.forEach(product => {
-            if (typeof addToCart === 'function') {
-                addToCart(product);
-            }
-        });
-
-        if (typeof openCheckout === 'function') {
-            setTimeout(() => openCheckout(), 300);
-        }
+    async refresh() {
+        await this.fetchBundles();
+        this.currentIndex = 0;
+        this.render();
+        this.setupEventListeners();
+        this.startAutoRotate();
     }
 }
 
-let bannerCarousel;
+// Initialize carousel when DOM is ready
+let bundleCarousel;
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        bannerCarousel = new BannerCarousel();
+        bundleCarousel = new BundleCarousel();
     });
 } else {
-    bannerCarousel = new BannerCarousel();
+    bundleCarousel = new BundleCarousel();
 }
 
-// Animations
-const style = document.createElement('style');
-style.textContent = `
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-@keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-`;
-document.head.appendChild(style);
+// Handle window resize
+let resizeTimeout;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        if (bundleCarousel) {
+            bundleCarousel.updateCarousel();
+        }
+    }, 250);
+});
