@@ -806,8 +806,14 @@ function renderRewardOverrides(overrides) {
 }
 
 function saveSettings() {
-    const mainApi = document.getElementById('settings-main-api').value;
-    const adminApi = document.getElementById('settings-admin-api').value;
+    const mainApi = document.getElementById('settings-main-api').value.trim();
+    const adminApi = document.getElementById('settings-admin-api').value.trim();
+    
+    if (!mainApi || !adminApi) {
+        showAdminToast('URL API tidak boleh kosong!', 'error');
+        return;
+    }
+
     CONFIG.setMainApiUrl(mainApi);
     CONFIG.setAdminApiUrl(adminApi);
     API_URL = adminApi; // Update local variable immediately
