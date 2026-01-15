@@ -666,13 +666,6 @@ function selectVariation(v, index) {
         const gajianInfo = calculateGajianPrice(v.harga);
         updateModalPrices(v.harga, gajianInfo.price, v.harga_coret || 0);
     }
-    
-    // Update image if variation has one
-    if (v.gambar) {
-        const imageEl = document.getElementById('modal-product-image');
-        if (imageEl) imageEl.src = v.gambar;
-        // If slider exists, we might want to update it too, but for now just the main image
-    }
 }
 
 function updateModalPrices(cash, gajian, coret) {
