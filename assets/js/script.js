@@ -419,9 +419,9 @@ function showSuccessNotification(orderId, waUrl) {
             </svg>
         </button>
         <div class="mb-4">
-            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-success-circle">
+                <svg class="w-10 h-10 text-green-600 animate-success-check" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
+                    <path class="checkmark-path" stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
                 </svg>
             </div>
             <h3 class="text-2xl font-bold text-gray-800 mb-2">Pesanan Berhasil Dikirim!</h3>
@@ -453,6 +453,49 @@ function showSuccessNotification(orderId, waUrl) {
             @keyframes fadeOut {
                 from { opacity: 1; }
                 to { opacity: 0; }
+            }
+            @keyframes successCircle {
+                0% {
+                    transform: scale(0);
+                    opacity: 0;
+                }
+                50% {
+                    transform: scale(1.1);
+                }
+                100% {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+            }
+            @keyframes successCheck {
+                0% {
+                    stroke-dashoffset: 50;
+                    opacity: 0;
+                }
+                50% {
+                    opacity: 1;
+                }
+                100% {
+                    stroke-dashoffset: 0;
+                }
+            }
+            @keyframes bounce {
+                0%, 100% {
+                    transform: translateY(0);
+                }
+                50% {
+                    transform: translateY(-10px);
+                }
+            }
+            .animate-success-circle {
+                animation: successCircle 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            }
+            .animate-success-check {
+                animation: successCheck 0.6s ease-in-out 0.3s forwards, bounce 0.6s ease-in-out 0.9s;
+            }
+            .checkmark-path {
+                stroke-dasharray: 50;
+                stroke-dashoffset: 50;
             }
         `;
         document.head.appendChild(style);
