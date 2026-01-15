@@ -1845,11 +1845,11 @@ async function renderWishlistItems() {
 
     // Use global allProducts which already has complete structure with hargaGajian, etc.
     // If allProducts is empty, fetch it first
-    if (!window.allProducts || window.allProducts.length === 0) {
+    if (!allProducts || allProducts.length === 0) {
         await fetchProducts();
     }
     
-    const wishlistProducts = window.allProducts.filter(p => wishlistIds.includes(p.id || p.sku));
+    const wishlistProducts = allProducts.filter(p => wishlistIds.includes(p.id || p.sku));
 
     if (wishlistProducts.length === 0) {
         container.innerHTML = '<p class="text-center text-gray-500 py-4">Produk tidak ditemukan.</p>';
