@@ -245,3 +245,8 @@ body.modal-active { overflow-x: hidden; overflow-y: visible !important; }
 button[onclick="checkUserPoints()"]:active {
     transform: scale(0.98);
 }
+
+/* Product Image Fade Transition */
+#modal-product-image {
+    transition: opacity 0.3s ease-in-out;
+}

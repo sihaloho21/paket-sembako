@@ -1019,9 +1019,11 @@ function renderVariantRow(variant, index) {
                 <label class="text-xs font-bold text-gray-600">Stok</label>
                 <input type="number" class="variant-stok w-full p-2 border rounded text-sm" value="${variant.stok || ''}" placeholder="10" required>
             </div>
-            <div>
-                <label class="text-xs font-bold text-gray-600">URL Gambar</label>
-                <input type="text" class="variant-gambar w-full p-2 border rounded text-sm" value="${gambar}" placeholder="https://example.com/oil-1l.webp">
+            <div class="col-span-2">
+                <label class="text-xs font-bold text-gray-600">URL Gambar Varian (Opsional)</label>
+                <input type="text" class="variant-gambar w-full p-2 border rounded text-sm mb-2" value="${gambar}" placeholder="https://example.com/variant-image.jpg" onchange="previewVariantImage(this)">
+                <p class="text-[10px] text-gray-500 mb-2">Jika diisi, gambar ini akan tampil saat varian dipilih. Jika kosong, akan gunakan gambar produk utama.</p>
+                ${gambar ? `<img src="${gambar}" class="variant-image-preview w-24 h-24 object-cover rounded border" onerror="this.style.display='none'">` : ''}
             </div>
         </div>
         <div class="mb-3">
@@ -1090,3 +1092,28 @@ function collectVariants() {
     return variants;
 }
 
+/**
+ * Preview variant image when URL is entered
+ */
+function previewVariantImage(input) {
+    const url = input.value.trim();
+    const row = input.closest('.variant-row');
+    
+    // Remove existing preview
+    const existingPreview = row.querySelector('.variant-image-preview');
+    if (existingPreview) {
+        existingPreview.remove();
+    }
+    
+    // Add new preview if URL is valid
+    if (url) {
+        const preview = document.createElement('img');
+        preview.src = url;
+        preview.className = 'variant-image-preview w-24 h-24 object-cover rounded border mt-2';
+        preview.onerror = function() {
+            this.style.display = 'none';
+            showToast('Gagal memuat gambar. Periksa URL gambar.', 'error');
+        };
+        input.parentElement.appendChild(preview);
+    }
+}

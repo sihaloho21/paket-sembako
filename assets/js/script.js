@@ -640,6 +640,23 @@ function selectVariation(v, index) {
         }
     });
 
+    // Update product image if variation has custom image
+    if (v.gambar) {
+        const imageEl = document.getElementById('modal-product-image');
+        if (imageEl) {
+            // Fade out effect
+            imageEl.style.opacity = '0';
+            setTimeout(() => {
+                imageEl.src = v.gambar;
+                imageEl.onerror = function() { 
+                    this.src = 'https://via.placeholder.com/300x200?text=Produk'; 
+                };
+                // Fade in effect
+                imageEl.style.opacity = '1';
+            }, 200);
+        }
+    }
+
     // Trigger quantity update to recalculate prices with the new variation
     const qtyInput = document.getElementById('modal-qty');
     if (qtyInput) {
