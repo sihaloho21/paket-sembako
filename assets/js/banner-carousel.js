@@ -267,18 +267,29 @@ class BundleCarousel {
         // Stop auto-rotate
         this.stopAutoRotate();
 
-        // Use existing openProductModal function from script.js
-        if (typeof openProductModal === 'function') {
-            openProductModal(product);
+        // Use existing showDetail function from script.js
+        if (typeof showDetail === 'function') {
+            showDetail(product);
         } else {
-            console.error('openProductModal function not found');
+            console.error('showDetail function not found');
             alert('Fungsi modal produk tidak ditemukan. Pastikan script.js sudah dimuat.');
         }
 
-        // Resume auto-rotate after modal closes
-        setTimeout(() => {
-            this.startAutoRotate();
-        }, 500);
+        // Resume auto-rotate when modal closes
+        const modal = document.getElementById('detail-modal');
+        if (modal) {
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.attributeName === 'class') {
+                        if (modal.classList.contains('hidden')) {
+                            this.startAutoRotate();
+                            observer.disconnect();
+                        }
+                    }
+                });
+            });
+            observer.observe(modal, { attributes: true });
+        }
     }
 
     async refresh() {
