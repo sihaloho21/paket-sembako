@@ -253,23 +253,19 @@ button[onclick="checkUserPoints()"]:active {
 
 /* Animated Text Banner */
 @keyframes slide {
-    0%, 16.67% {
+    0%, 10% {
         transform: translateY(-100%);
     }
-    20%, 33.33% {
+    13%, 30% {
         transform: translateY(0);
     }
-    36.67%, 100% {
+    33%, 100% {
         transform: translateY(100%);
     }
 }
 
 .animate-slide {
-    animation: slide 5s infinite;
+    animation: slide 10s infinite;
 }
 
-#header-top {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-}
+/* Banner sticky position handled in HTML inline */
