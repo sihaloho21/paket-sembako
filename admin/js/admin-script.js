@@ -814,9 +814,16 @@ function saveSettings() {
         return;
     }
 
+    // Save API URLs
     CONFIG.setMainApiUrl(mainApi);
     CONFIG.setAdminApiUrl(adminApi);
     API_URL = adminApi; // Update local variable immediately
+    
+    // Clear cache when API URL changes
+    if (typeof ApiService !== 'undefined') {
+        ApiService.clearCache();
+        console.log('✅ Cache cleared after API URL change');
+    }
     
     const targetDay = parseInt(document.getElementById('gajian-target-day').value);
     const defaultMarkup = parseFloat(document.getElementById('gajian-default-markup').value) / 100;
@@ -838,8 +845,12 @@ function saveSettings() {
         minPoint
     });
     
-    showAdminToast('Pengaturan berhasil disimpan!', 'success');
-    setTimeout(() => location.reload(), 1000);
+    // Show detailed success message
+    const successMsg = `✅ Pengaturan Berhasil Disimpan!\n\n📡 Main API: ${mainApi.substring(0, 40)}...\n🔧 Admin API: ${adminApi.substring(0, 40)}...\n🗑️ Cache cleared\n\n⏳ Reloading...`;
+    alert(successMsg);
+    
+    showAdminToast('Pengaturan berhasil disimpan! Halaman akan reload...', 'success');
+    setTimeout(() => location.reload(), 1500);
 }
 
 
@@ -1196,3 +1207,107 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateCacheCount, 5000);
     updateCacheCount();
 });
+
+
+// ============ API TESTING FUNCTIONS ============
+
+/**
+ * Test Main API URL
+ */
+async function testMainApi() {
+    const apiUrl = document.getElementById('settings-main-api').value.trim();
+    const statusEl = document.getElementById('main-api-status');
+    
+    if (!apiUrl) {
+        showApiStatus(statusEl, 'error', '❌ API URL tidak boleh kosong!');
+        return;
+    }
+    
+    // Validate URL format
+    if (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
+        showApiStatus(statusEl, 'error', '❌ API URL harus dimulai dengan http:// atau https://');
+        return;
+    }
+    
+    showApiStatus(statusEl, 'loading', '⏳ Testing API...');
+    
+    try {
+        // Test with ?sheet=products endpoint
+        const testUrl = `${apiUrl}?sheet=products`;
+        const response = await fetch(testUrl);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!Array.isArray(data)) {
+            throw new Error('Response bukan array. Pastikan sheet "products" ada di spreadsheet.');
+        }
+        
+        showApiStatus(statusEl, 'success', `✅ API Valid! Ditemukan ${data.length} produk.`);
+    } catch (error) {
+        console.error('API Test Error:', error);
+        showApiStatus(statusEl, 'error', `❌ API Error: ${error.message}`);
+    }
+}
+
+/**
+ * Test Admin API URL
+ */
+async function testAdminApi() {
+    const apiUrl = document.getElementById('settings-admin-api').value.trim();
+    const statusEl = document.getElementById('admin-api-status');
+    
+    if (!apiUrl) {
+        showApiStatus(statusEl, 'error', '❌ API URL tidak boleh kosong!');
+        return;
+    }
+    
+    // Validate URL format
+    if (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
+        showApiStatus(statusEl, 'error', '❌ API URL harus dimulai dengan http:// atau https://');
+        return;
+    }
+    
+    showApiStatus(statusEl, 'loading', '⏳ Testing API...');
+    
+    try {
+        // Test with ?sheet=products endpoint
+        const testUrl = `${apiUrl}?sheet=products`;
+        const response = await fetch(testUrl);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!Array.isArray(data)) {
+            throw new Error('Response bukan array. Pastikan sheet "products" ada di spreadsheet.');
+        }
+        
+        showApiStatus(statusEl, 'success', `✅ API Valid! Ditemukan ${data.length} produk.`);
+    } catch (error) {
+        console.error('API Test Error:', error);
+        showApiStatus(statusEl, 'error', `❌ API Error: ${error.message}`);
+    }
+}
+
+/**
+ * Show API test status
+ */
+function showApiStatus(element, type, message) {
+    element.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700', 'bg-yellow-100', 'text-yellow-700');
+    
+    if (type === 'success') {
+        element.classList.add('bg-green-100', 'text-green-700');
+    } else if (type === 'error') {
+        element.classList.add('bg-red-100', 'text-red-700');
+    } else if (type === 'loading') {
+        element.classList.add('bg-yellow-100', 'text-yellow-700');
+    }
+    
+    element.textContent = message;
+}
