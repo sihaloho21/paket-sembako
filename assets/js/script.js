@@ -1843,19 +1843,13 @@ async function renderWishlistItems() {
         return;
     }
 
-    // Ambil semua produk dari global variable atau fetch ulang
-    let allProducts = [];
-    try {
-        allProducts = await ApiService.get('?sheet=products', {
-            cacheDuration: 5 * 60 * 1000 // Use cached data if available
-        });
-    } catch (error) {
-        console.error('Error fetching products:', error);
-        container.innerHTML = '<p class="text-center text-red-500 py-4">Gagal memuat produk.</p>';
-        return;
+    // Use global allProducts which already has complete structure with hargaGajian, etc.
+    // If allProducts is empty, fetch it first
+    if (!window.allProducts || window.allProducts.length === 0) {
+        await fetchProducts();
     }
     
-    const wishlistProducts = allProducts.filter(p => wishlistIds.includes(p.id || p.sku));
+    const wishlistProducts = window.allProducts.filter(p => wishlistIds.includes(p.id || p.sku));
 
     if (wishlistProducts.length === 0) {
         container.innerHTML = '<p class="text-center text-gray-500 py-4">Produk tidak ditemukan.</p>';
