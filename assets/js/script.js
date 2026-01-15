@@ -1475,6 +1475,12 @@ async function claimReward(rewardId) {
 }
 
 /**
+ * ==========================================
+ * MODAL KONFIRMASI TUKAR POIN
+ * ==========================================
+ */
+
+/**
  * Variabel global untuk menyimpan data reward sementara
  */
 let pendingRewardData = {
