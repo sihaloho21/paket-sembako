@@ -267,9 +267,18 @@ class BundleCarousel {
         // Stop auto-rotate
         this.stopAutoRotate();
 
+        // Map field names to match showDetail expectations
+        const mappedProduct = {
+            ...product,
+            harga: parseInt(product.harga_cash || product.harga || 0),
+            hargaGajian: parseInt(product.harga_gajian || product.hargaGajian || 0),
+            hargaCoret: parseInt(product.harga_coret || product.hargaCoret || 0),
+            stok: parseInt(product.stok_tersedia || product.stok || 0)
+        };
+
         // Use existing showDetail function from script.js
         if (typeof showDetail === 'function') {
-            showDetail(product);
+            showDetail(mappedProduct);
         } else {
             console.error('showDetail function not found');
             alert('Fungsi modal produk tidak ditemukan. Pastikan script.js sudah dimuat.');
