@@ -35,11 +35,10 @@ let selectedVariation = null;
 
 async function fetchProducts() {
     try {
-        API_URL = getApiUrl(); // Refresh API URL from localStorage
-        console.log('Fetching products from:', API_URL);
-        const response = await fetch(API_URL);
-        if (!response.ok) throw new Error('Network response was not ok');
-        const products = await response.json();
+        // Use ApiService with caching (5 minutes)
+        const products = await ApiService.get('?sheet=products', {
+            cacheDuration: 5 * 60 * 1000 // 5 minutes cache
+        });
         console.log('Products received:', products);
         
         allProducts = products.map(p => {
@@ -1210,22 +1209,14 @@ function sendToWA() {
         point_processed: 'No'
     };
 
-    API_URL = getApiUrl(); // Refresh API URL from localStorage
-    fetch(`${API_URL}?sheet=orders`, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify([orderData])
-    })
-    .then(res => res.json())
-    .then(data => {
-        console.log('Order logged to spreadsheet:', data);
-    })
-    .catch(err => {
-        console.error('Error logging order:', err);
-    })
+    // Use ApiService to log order (no caching for POST)
+    ApiService.post('?sheet=orders', [orderData])
+        .then(data => {
+            console.log('Order logged to spreadsheet:', data);
+        })
+        .catch(err => {
+            console.error('Error logging order:', err);
+        })
     .finally(() => {
         // Clear cart after order
         cart = [];
@@ -1267,10 +1258,10 @@ async function fetchTukarPoin() {
     if (!rewardList) return;
 
     try {
-        API_URL = getApiUrl(); // Refresh API URL from localStorage
-        const response = await fetch(`${API_URL}?sheet=tukar_poin`);
-        if (!response.ok) throw new Error('Network response was not ok');
-        const rewards = await response.json();
+        // Use ApiService with caching (3 minutes)
+        const rewards = await ApiService.get('?sheet=tukar_poin', {
+            cacheDuration: 3 * 60 * 1000 // 3 minutes cache
+        });
         renderRewardItems(rewards);
     } catch (error) {
         console.error('Error fetching reward items:', error);
@@ -1358,8 +1349,6 @@ function checkUserPoints() {
     }
 
     const normalizedPhone = normalizePhone(phone);
-    API_URL = getApiUrl(); // Refresh API URL from localStorage
-    const apiUrl = `${API_URL}?sheet=user_points`;
 
     // Show loading state
     const checkBtn = event.target;
@@ -1369,8 +1358,8 @@ function checkUserPoints() {
         checkBtn.disabled = true;
     }
 
-    fetch(apiUrl)
-        .then(res => res.json())
+    // Use ApiService with no caching (always fresh data)
+    ApiService.get('?sheet=user_points', { cache: false })
         .then(data => {
             // Find user by normalized phone
             // Fix: API uses 'phone' field, not 'whatsapp'
@@ -1422,10 +1411,10 @@ async function claimReward(rewardId) {
     }
 
     try {
-        API_URL = getApiUrl(); // Refresh API URL from localStorage
         // 1. Get reward details to know the required points
-        const rewardRes = await fetch(`${API_URL}/search?sheet=tukar_poin&id=${rewardId}`);
-        const rewardData = await rewardRes.json();
+        const rewardData = await ApiService.get(`/search?sheet=tukar_poin&id=${rewardId}`, {
+            cache: false // Don't cache search results
+        });
         
         if (!rewardData || rewardData.length === 0) {
             alert('Data hadiah tidak ditemukan.');
@@ -1452,41 +1441,23 @@ async function claimReward(rewardId) {
 
         // Show loading state
         showToast('Sedang memproses penukaran...');
-
         // 3. Deduct points from user_points sheet
         const newPoints = userPoints - requiredPoints;
-        const updatePointsRes = await fetch(`${API_URL}/phone/${phone}?sheet=user_points`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                data: {
-                    points: newPoints,
-                    last_updated: new Date().toLocaleString('id-ID')
-                }
-            })
-        });
-
-        if (!updatePointsRes.ok) throw new Error('Gagal memotong poin pengguna.');
+        await ApiService.patch(`/phone/${phone}?sheet=user_points`, { points: newPoints });
 
         // 4. Record claim in claims sheet
         const claimId = 'CLM-' + Date.now().toString().slice(-6);
-        const recordClaimRes = await fetch(`${API_URL}?sheet=claims`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                data: {
-                    id: claimId,
-                    phone: phone,
-                    nama: customerName,
-                    hadiah: rewardName,
-                    poin: requiredPoints,
-                    status: 'Menunggu',
-                    tanggal: new Date().toLocaleString('id-ID')
-                }
-            })
+        await ApiService.post('?sheet=claims', {
+            data: {
+                id: claimId,
+                phone: phone,
+                nama: customerName,
+                hadiah: rewardName,
+                poin: requiredPoints,
+                status: 'Menunggu',
+                tanggal: new Date().toLocaleString('id-ID')
+            }
         });
-
-        if (!recordClaimRes.ok) throw new Error('Gagal mencatat data klaim.');
 
         // 5. Update local state and UI
         sessionStorage.setItem('user_points', newPoints);
@@ -1542,10 +1513,10 @@ async function showConfirmTukarModal(rewardId) {
     }
 
     try {
-        API_URL = getApiUrl(); // Refresh API URL from localStorage
         // Fetch reward details
-        const rewardRes = await fetch(`${API_URL}/search?sheet=tukar_poin&id=${rewardId}`);
-        const rewardData = await rewardRes.json();
+        const rewardData = await ApiService.get(`/search?sheet=tukar_poin&id=${rewardId}`, {
+            cache: false
+        });
         
         if (!rewardData || rewardData.length === 0) {
             showToast('Data hadiah tidak ditemukan.');
@@ -1657,10 +1628,10 @@ async function processClaimReward(rewardId, customerName) {
     const userPoints = parseFloat(sessionStorage.getItem('user_points')) || 0;
     
     try {
-        API_URL = getApiUrl(); // Refresh API URL from localStorage
         // 1. Get reward details
-        const rewardRes = await fetch(`${API_URL}/search?sheet=tukar_poin&id=${rewardId}`);
-        const rewardData = await rewardRes.json();
+        const rewardData = await ApiService.get(`/search?sheet=tukar_poin&id=${rewardId}`, {
+            cache: false
+        });
         
         if (!rewardData || rewardData.length === 0) {
             showToast('Data hadiah tidak ditemukan.');
@@ -1682,38 +1653,26 @@ async function processClaimReward(rewardId, customerName) {
 
         // 2. Deduct points from user_points sheet
         const newPoints = userPoints - requiredPoints;
-        const updatePointsRes = await fetch(`${API_URL}/phone/${phone}?sheet=user_points`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                data: {
-                    points: newPoints,
-                    last_updated: new Date().toLocaleString('id-ID')
-                }
-            })
+        await ApiService.patch(`/phone/${phone}?sheet=user_points`, {
+            data: {
+                points: newPoints,
+                last_updated: new Date().toLocaleString('id-ID')
+            }
         });
-
-        if (!updatePointsRes.ok) throw new Error('Gagal memotong poin pengguna.');
 
         // 3. Record claim in claims sheet
         const claimId = 'CLM-' + Date.now().toString().slice(-6);
-        const recordClaimRes = await fetch(`${API_URL}?sheet=claims`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                data: {
-                    id: claimId,
-                    phone: phone,
-                    nama: customerName,
-                    hadiah: rewardName,
-                    poin: requiredPoints,
-                    status: 'Menunggu',
-                    tanggal: new Date().toLocaleString('id-ID')
-                }
-            })
+        await ApiService.post('?sheet=claims', {
+            data: {
+                id: claimId,
+                phone: phone,
+                nama: customerName,
+                hadiah: rewardName,
+                poin: requiredPoints,
+                status: 'Menunggu',
+                tanggal: new Date().toLocaleString('id-ID')
+            }
         });
-
-        if (!recordClaimRes.ok) throw new Error('Gagal mencatat data klaim.');
 
         // 4. Update local state and UI
         sessionStorage.setItem('user_points', newPoints);
@@ -1887,9 +1846,9 @@ async function renderWishlistItems() {
     // Ambil semua produk dari global variable atau fetch ulang
     let allProducts = [];
     try {
-        API_URL = getApiUrl(); // Refresh API URL from localStorage
-        const response = await fetch(`${API_URL}?sheet=products`);
-        allProducts = await response.json();
+        allProducts = await ApiService.get('?sheet=products', {
+            cacheDuration: 5 * 60 * 1000 // Use cached data if available
+        });
     } catch (error) {
         console.error('Error fetching products:', error);
         container.innerHTML = '<p class="text-center text-red-500 py-4">Gagal memuat produk.</p>';

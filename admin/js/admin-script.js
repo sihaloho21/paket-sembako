@@ -1123,3 +1123,76 @@ function previewVariantImage(input) {
         input.parentElement.appendChild(preview);
     }
 }
+
+
+// ============ CACHE MANAGEMENT FUNCTIONS ============
+
+/**
+ * Update cache count display
+ */
+function updateCacheCount() {
+    if (typeof ApiService !== 'undefined') {
+        const stats = ApiService.getCacheStats();
+        const countEl = document.getElementById('cache-count');
+        if (countEl) {
+            countEl.textContent = stats.totalEntries;
+        }
+    }
+}
+
+/**
+ * Clear API cache
+ */
+function clearApiCache() {
+    if (typeof ApiService === 'undefined') {
+        alert('ApiService tidak tersedia.');
+        return;
+    }
+    
+    if (!confirm('Hapus semua cache API? Data akan di-fetch ulang dari server.')) {
+        return;
+    }
+    
+    const cleared = ApiService.clearCache();
+    alert(`✅ Cache berhasil dihapus!\n\n${cleared} entries dihapus.`);
+    updateCacheCount();
+}
+
+/**
+ * View cache statistics
+ */
+function viewCacheStats() {
+    if (typeof ApiService === 'undefined') {
+        alert('ApiService tidak tersedia.');
+        return;
+    }
+    
+    const stats = ApiService.getCacheStats();
+    
+    let message = `📊 STATISTIK CACHE API\n\n`;
+    message += `Total Entries: ${stats.totalEntries}\n`;
+    message += `Pending Requests: ${stats.pendingRequests}\n\n`;
+    
+    if (stats.entries.length > 0) {
+        message += `DETAIL CACHE:\n`;
+        message += `${'='.repeat(40)}\n\n`;
+        
+        stats.entries.forEach((entry, idx) => {
+            const endpoint = entry.key.split(':')[1]?.split('?')[1] || 'unknown';
+            message += `${idx + 1}. ${endpoint}\n`;
+            message += `   Age: ${entry.age}s\n`;
+            message += `   Size: ${(entry.size / 1024).toFixed(2)} KB\n\n`;
+        });
+    } else {
+        message += `Tidak ada cache tersimpan.`;
+    }
+    
+    alert(message);
+}
+
+// Update cache count on page load and when switching to settings
+document.addEventListener('DOMContentLoaded', () => {
+    // Update cache count every 5 seconds
+    setInterval(updateCacheCount, 5000);
+    updateCacheCount();
+});
