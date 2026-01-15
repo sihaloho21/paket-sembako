@@ -1871,7 +1871,7 @@ async function renderWishlistItems() {
                     <img src="${p.gambar}" alt="${p.nama}" class="w-16 h-16 object-cover rounded-lg shadow-sm">
                     <div class="flex-1">
                         <p class="font-semibold text-sm text-gray-800">${p.nama}</p>
-                        <p class="text-xs text-green-600 font-bold mt-1">Rp ${formatRupiah(harga)}</p>
+                        <p class="text-xs text-green-600 font-bold mt-1">Rp ${harga.toLocaleString('id-ID')}</p>
                     </div>
                 </div>
                 <div class="flex gap-2">
