@@ -1280,7 +1280,7 @@ function renderRewardItems(rewards) {
                                 <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
                                 ${poin} Poin
                             </div>
-                            <button onclick="claimReward('${id}')" class="bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition active:scale-95">
+                            <button onclick="showConfirmTukarModal('${id}')" class="bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition active:scale-95">
                                 Tukar
                             </button>
                         </div>
@@ -1471,5 +1471,227 @@ async function claimReward(rewardId) {
     } catch (error) {
         console.error('Error in claimReward:', error);
         alert('Terjadi kesalahan saat memproses penukaran: ' + error.message);
+    }
+}
+
+/**
+ * Variabel global untuk menyimpan data reward sementara
+ */
+let pendingRewardData = {
+    id: null,
+    nama: null,
+    poin: null,
+    gambar: null,
+    deskripsi: null
+};
+
+/**
+ * Tampilkan modal konfirmasi penukaran poin
+ * @param {string} rewardId - ID reward dari database
+ */
+async function showConfirmTukarModal(rewardId) {
+    const userPoints = parseFloat(sessionStorage.getItem('user_points')) || 0;
+    
+    if (!sessionStorage.getItem('reward_phone')) {
+        showToast('Mohon cek poin Anda terlebih dahulu.');
+        return;
+    }
+
+    try {
+        // Fetch reward details
+        const rewardRes = await fetch(`${API_URL}/search?sheet=tukar_poin&id=${rewardId}`);
+        const rewardData = await rewardRes.json();
+        
+        if (!rewardData || rewardData.length === 0) {
+            showToast('Data hadiah tidak ditemukan.');
+            return;
+        }
+
+        const reward = rewardData[0];
+        const requiredPoints = parseFloat(reward.poin) || 0;
+        const rewardName = reward.nama || reward.judul || 'Hadiah';
+
+        // Validasi poin cukup
+        if (userPoints < requiredPoints) {
+            showToast(`Poin Anda tidak cukup. Dibutuhkan ${requiredPoints} poin, saldo Anda ${userPoints.toFixed(1)} poin.`);
+            return;
+        }
+
+        // Simpan data reward ke variabel global
+        pendingRewardData = {
+            id: rewardId,
+            nama: rewardName,
+            poin: requiredPoints,
+            gambar: reward.gambar || '',
+            deskripsi: reward.deskripsi || ''
+        };
+
+        // Update modal dengan data
+        document.getElementById('confirm-reward-name').textContent = rewardName;
+        document.getElementById('confirm-reward-points').textContent = requiredPoints;
+        document.getElementById('confirm-remaining-points').textContent = (userPoints - requiredPoints).toFixed(1);
+
+        // Tampilkan modal
+        const modal = document.getElementById('confirm-tukar-modal');
+        modal.classList.remove('hidden');
+        document.body.classList.add('modal-active');
+
+    } catch (error) {
+        console.error('Error showing confirm modal:', error);
+        showToast('Terjadi kesalahan saat memproses permintaan Anda.');
+    }
+}
+
+/**
+ * Tutup modal konfirmasi
+ */
+function cancelTukarModal() {
+    const modal = document.getElementById('confirm-tukar-modal');
+    modal.classList.add('hidden');
+    document.body.classList.remove('modal-active');
+    pendingRewardData = { id: null, nama: null, poin: null, gambar: null, deskripsi: null };
+}
+
+/**
+ * Lanjutkan ke modal input nama
+ */
+function proceedToNameInput() {
+    // Tutup modal konfirmasi
+    document.getElementById('confirm-tukar-modal').classList.add('hidden');
+    
+    // Buka modal input nama
+    const nameModal = document.getElementById('name-input-modal');
+    nameModal.classList.remove('hidden');
+    
+    // Focus ke input field
+    setTimeout(() => {
+        document.getElementById('claim-name-input').focus();
+    }, 100);
+}
+
+/**
+ * Kembali ke modal konfirmasi
+ */
+function backToConfirmModal() {
+    document.getElementById('name-input-modal').classList.add('hidden');
+    document.getElementById('confirm-tukar-modal').classList.remove('hidden');
+    document.getElementById('claim-name-input').value = '';
+}
+
+/**
+ * Submit nama dan lanjutkan proses klaim
+ */
+async function submitNameAndClaim() {
+    const customerName = document.getElementById('claim-name-input').value.trim();
+    
+    if (!customerName) {
+        showToast('Mohon masukkan nama Anda terlebih dahulu.');
+        return;
+    }
+
+    if (customerName.length < 3) {
+        showToast('Nama harus minimal 3 karakter.');
+        return;
+    }
+
+    // Tutup modal
+    document.getElementById('name-input-modal').classList.add('hidden');
+    document.body.classList.remove('modal-active');
+
+    // Proses klaim dengan data yang sudah dikumpulkan
+    await processClaimReward(pendingRewardData.id, customerName);
+}
+
+/**
+ * Proses klaim reward (logika utama)
+ * @param {string} rewardId - ID reward
+ * @param {string} customerName - Nama pelanggan
+ */
+async function processClaimReward(rewardId, customerName) {
+    const phone = sessionStorage.getItem('reward_phone');
+    const userPoints = parseFloat(sessionStorage.getItem('user_points')) || 0;
+    
+    try {
+        // 1. Get reward details
+        const rewardRes = await fetch(`${API_URL}/search?sheet=tukar_poin&id=${rewardId}`);
+        const rewardData = await rewardRes.json();
+        
+        if (!rewardData || rewardData.length === 0) {
+            showToast('Data hadiah tidak ditemukan.');
+            return;
+        }
+
+        const reward = rewardData[0];
+        const requiredPoints = parseFloat(reward.poin) || 0;
+        const rewardName = reward.nama || reward.judul || 'Hadiah';
+
+        // Validasi final
+        if (userPoints < requiredPoints) {
+            showToast(`Poin Anda tidak cukup.`);
+            return;
+        }
+
+        // Show loading state
+        showToast('Sedang memproses penukaran...');
+
+        // 2. Deduct points from user_points sheet
+        const newPoints = userPoints - requiredPoints;
+        const updatePointsRes = await fetch(`${API_URL}/phone/${phone}?sheet=user_points`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                data: {
+                    points: newPoints,
+                    last_updated: new Date().toLocaleString('id-ID')
+                }
+            })
+        });
+
+        if (!updatePointsRes.ok) throw new Error('Gagal memotong poin pengguna.');
+
+        // 3. Record claim in claims sheet
+        const claimId = 'CLM-' + Date.now().toString().slice(-6);
+        const recordClaimRes = await fetch(`${API_URL}?sheet=claims`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                data: {
+                    id: claimId,
+                    phone: phone,
+                    nama: customerName,
+                    hadiah: rewardName,
+                    poin: requiredPoints,
+                    status: 'Menunggu',
+                    tanggal: new Date().toLocaleString('id-ID')
+                }
+            })
+        });
+
+        if (!recordClaimRes.ok) throw new Error('Gagal mencatat data klaim.');
+
+        // 4. Update local state and UI
+        sessionStorage.setItem('user_points', newPoints);
+        const pointsDisplay = document.querySelector('#points-display h4');
+        if (pointsDisplay) {
+            pointsDisplay.innerHTML = `${newPoints.toFixed(1)} <span class="text-sm font-bold">Poin</span>`;
+        }
+
+        // 5. Send to WhatsApp for notification
+        const waMessage = `*KLAIM REWARD POIN BERHASIL*\n\nID Klaim: ${claimId}\nPelanggan: ${customerName}\nNomor WhatsApp: ${phone}\nReward: ${rewardName}\nPoin Ditukar: ${requiredPoints}\nSisa Poin: ${newPoints.toFixed(1)}\n\nMohon segera diproses. Terima kasih!`;
+        const waUrl = `https://wa.me/628993370200?text=${encodeURIComponent(waMessage)}`;
+        
+        showToast('Penukaran poin berhasil! Membuka WhatsApp...');
+        
+        // Clear pending data
+        pendingRewardData = { id: null, nama: null, poin: null, gambar: null, deskripsi: null };
+        
+        // Small delay before opening WhatsApp
+        setTimeout(() => {
+            window.open(waUrl, '_blank');
+        }, 1500);
+
+    } catch (error) {
+        console.error('Error processing claim:', error);
+        showToast('Gagal memproses penukaran. Silakan coba lagi.');
     }
 }
