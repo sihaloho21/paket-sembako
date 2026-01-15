@@ -251,21 +251,4 @@ button[onclick="checkUserPoints()"]:active {
     transition: opacity 0.3s ease-in-out;
 }
 
-/* Animated Text Banner */
-@keyframes slide {
-    0%, 10% {
-        transform: translateY(-100%);
-    }
-    13%, 30% {
-        transform: translateY(0);
-    }
-    33%, 100% {
-        transform: translateY(100%);
-    }
-}
-
-.animate-slide {
-    animation: slide 10s infinite;
-}
-
-/* Banner sticky position handled in HTML inline */
+/* Animated Text Banner - Removed */
