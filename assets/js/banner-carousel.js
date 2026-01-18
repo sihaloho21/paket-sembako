@@ -4,6 +4,10 @@
  * Menggunakan template card yang sama dengan katalog
  */
 
+import { CONFIG } from './config.js';
+import { calculateGajianPrice, calculateRewardPoints } from './payment-logic.js';
+import { logger } from './logger.js';
+
 class BundleCarousel {
     constructor() {
         this.bundles = [];
@@ -43,13 +47,13 @@ class BundleCarousel {
                         hargaGajian: finalGajianPrice,
                         hargaCoret: parseInt(p.harga_coret || p.hargaCoret || 0),
                         stok: parseInt(p.stok_tersedia || p.stok || 0),
-                        gambar: p.gambar || 'https://via.placeholder.com/300x200?text=Produk'
+                        gambar: p.gambar || '/assets/img/placeholder.png'
                     };
                 });
             
-            console.log(`✅ Loaded ${this.bundles.length} bundle packages`);
+            logger.log(`✅ Loaded ${this.bundles.length} bundle packages`);
         } catch (error) {
-            console.error('❌ Error fetching bundles:', error);
+            logger.error('❌ Error fetching bundles:', error);
             this.bundles = [];
         }
     }
@@ -106,7 +110,7 @@ class BundleCarousel {
 
         const pData = JSON.stringify(p).replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const images = p.gambar ? p.gambar.split(',') : [];
-        const mainImage = images[0] || 'https://via.placeholder.com/300x200?text=Produk';
+        const mainImage = images[0] || '/assets/img/placeholder.png';
 
         const rewardPoints = typeof calculateRewardPoints === 'function' ? calculateRewardPoints(p.harga, p.nama) : 0;
         
@@ -133,7 +137,7 @@ class BundleCarousel {
                             +${rewardPoints} Poin
                         </div>
                     </div>
-                    <img src="${mainImage}" alt="${p.nama}" onclick='bundleCarousel.openProductDetail(${index})' class="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity ${p.stok === 0 ? 'grayscale opacity-60' : ''}" onerror="this.src='https://via.placeholder.com/300x200?text=Produk'">
+                    <img src="${mainImage}" alt="${p.nama}" onclick='bundleCarousel.openProductDetail(${index})' class="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity ${p.stok === 0 ? 'grayscale opacity-60' : ''}" onerror="this.src='/assets/img/placeholder.png'">
                     <div class="p-6">
                         <div class="flex justify-between items-start mb-2">
                             <h4 class="text-lg font-bold text-gray-800">${p.nama}</h4>
@@ -350,7 +354,7 @@ class BundleCarousel {
         if (typeof showDetail === 'function') {
             showDetail(product);
         } else {
-            console.error('showDetail function not found');
+            logger.error('showDetail function not found');
         }
 
         // Resume auto-rotate when modal closes
@@ -377,7 +381,7 @@ class BundleCarousel {
         if (typeof addToCart === 'function') {
             addToCart(product, event);
         } else {
-            console.error('addToCart function not found');
+            logger.error('addToCart function not found');
         }
     }
 
@@ -390,7 +394,7 @@ class BundleCarousel {
         if (typeof directOrder === 'function') {
             directOrder(product);
         } else {
-            console.error('directOrder function not found');
+            logger.error('directOrder function not found');
         }
     }
 
@@ -403,14 +407,19 @@ class BundleCarousel {
     }
 }
 
+// Export for ES modules
+export { BundleCarousel };
+
 // Initialize carousel when DOM is ready
 let bundleCarousel;
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         bundleCarousel = new BundleCarousel();
+        window.bundleCarousel = bundleCarousel; // Make available globally for inline handlers
     });
 } else {
     bundleCarousel = new BundleCarousel();
+    window.bundleCarousel = bundleCarousel; // Make available globally for inline handlers
 }
 
 // Handle window resize

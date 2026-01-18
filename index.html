@@ -808,18 +808,25 @@
         </div>
     </div>
 
-    <script src="assets/js/config.js"></script>
-    <script src="assets/js/api-service.js"></script>
-    <script src="assets/js/payment-logic.js"></script>
-    <script src="assets/js/tiered-pricing-logic.js"></script>
-    <script src="assets/js/slider-enhanced.js"></script>
-    <script src="assets/js/banner-carousel.js"></script>
-    <script>
+    <!-- ES Module Scripts -->
+    <script type="module" src="assets/js/logger.js"></script>
+    <script type="module" src="assets/js/config.js"></script>
+    <script type="module" src="assets/js/api-service.js"></script>
+    <script type="module" src="assets/js/payment-logic.js"></script>
+    <script type="module" src="assets/js/tiered-pricing-logic.js"></script>
+    <script type="module" src="assets/js/slider-enhanced.js"></script>
+    <script type="module" src="assets/js/banner-carousel.js"></script>
+    <script type="module">
+        // Import and initialize
+        import { CONFIG } from './assets/js/config.js';
+        
         // Fetch settings from bootstrap API before loading main script
         (async () => {
             await CONFIG.fetchSettings();
         })();
     </script>
     <script src="assets/js/script.js"></script>
+    
+    <!-- Note: script.js will be fully modularized in future updates -->
 </body>
 </html>

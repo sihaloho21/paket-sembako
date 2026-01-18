@@ -4,7 +4,9 @@
  * Memungkinkan perubahan URL tanpa mengedit kode
  */
 
-const CONFIG = {
+import { logger } from './logger.js';
+
+export const CONFIG = {
     // Default API URLs
     DEFAULTS: {
         MAIN_API: 'https://sheetdb.io/api/v1/sappvpb5wazfd',
@@ -53,18 +55,18 @@ const CONFIG = {
         
         // Jika tidak ada bootstrap API, skip
         if (!bootstrapApi) {
-            console.log('⚠️ [CONFIG] No bootstrap API configured, using localStorage');
+            logger.log('⚠️ [CONFIG] No bootstrap API configured, using localStorage');
             return false;
         }
         
         // Jika sudah fetch di session ini, skip
         if (this._settingsFetched) {
-            console.log('✅ [CONFIG] Settings already fetched this session');
+            logger.log('✅ [CONFIG] Settings already fetched this session');
             return true;
         }
         
         try {
-            console.log('🔄 [CONFIG] Fetching settings from bootstrap API...');
+            logger.log('🔄 [CONFIG] Fetching settings from bootstrap API...');
             const response = await fetch(`${bootstrapApi}?sheet=settings`);
             
             if (!response.ok) {
@@ -72,7 +74,7 @@ const CONFIG = {
             }
             
             const settings = await response.json();
-            console.log('📥 [CONFIG] Settings received:', settings);
+            logger.log('📥 [CONFIG] Settings received:', settings);
             
             // Parse settings array menjadi object
             const settingsObj = {};
@@ -83,19 +85,19 @@ const CONFIG = {
             // Update sessionStorage dengan settings dari server
             if (settingsObj.main_api_url) {
                 sessionStorage.setItem('runtime_main_api_url', settingsObj.main_api_url);
-                console.log('✅ [CONFIG] Main API URL updated:', settingsObj.main_api_url);
+                logger.log('✅ [CONFIG] Main API URL updated:', settingsObj.main_api_url);
             }
             
             if (settingsObj.admin_api_url) {
                 sessionStorage.setItem('runtime_admin_api_url', settingsObj.admin_api_url);
-                console.log('✅ [CONFIG] Admin API URL updated:', settingsObj.admin_api_url);
+                logger.log('✅ [CONFIG] Admin API URL updated:', settingsObj.admin_api_url);
             }
             
             this._settingsFetched = true;
             return true;
             
         } catch (error) {
-            console.error('❌ [CONFIG] Failed to fetch settings:', error);
+            logger.error('❌ [CONFIG] Failed to fetch settings:', error);
             return false;
         }
     },
@@ -182,7 +184,7 @@ const CONFIG = {
             try {
                 return JSON.parse(saved);
             } catch (e) {
-                console.error('Error parsing gajian config', e);
+                logger.error('Error parsing gajian config', e);
             }
         }
         return {
@@ -221,7 +223,7 @@ const CONFIG = {
             try {
                 return JSON.parse(saved);
             } catch (e) {
-                console.error('Error parsing reward config', e);
+                logger.error('Error parsing reward config', e);
             }
         }
         return {

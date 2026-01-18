@@ -2,6 +2,8 @@
  * Configuration for "Bayar Gajian" payment method.
  * Fetches configuration from CONFIG manager or uses defaults.
  */
+import { CONFIG } from './config.js';
+
 function getGajianConfig() {
     if (typeof CONFIG !== 'undefined' && CONFIG.getGajianConfig) {
         return CONFIG.getGajianConfig();
@@ -115,8 +117,5 @@ function calculateRewardPoints(price, productName) {
     return Math.round(points * 10) / 10;
 }
 
-// Exporting for use in other scripts
-if (typeof window !== 'undefined') {
-    window.calculateGajianPrice = calculateGajianPrice;
-    window.calculateRewardPoints = calculateRewardPoints;
-}
+// Export functions as ES modules
+export { calculateGajianPrice, calculateRewardPoints };

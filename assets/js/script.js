@@ -118,7 +118,7 @@ function renderProducts(products) {
 
         const pData = JSON.stringify(p).replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const images = p.gambar ? p.gambar.split(',') : [];
-        const mainImage = images[0] || 'https://via.placeholder.com/300x200?text=Produk';
+        const mainImage = images[0] || '/assets/img/placeholder.png';
 
         const rewardPoints = calculateRewardPoints(p.harga, p.nama);
         
@@ -185,7 +185,7 @@ function renderProducts(products) {
                     </div>
                     ` : ''}
                 </div>
-                <img src="${mainImage}" alt="${p.nama}" onclick='showDetail(${pData})' class="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity ${p.stok === 0 ? 'grayscale opacity-60' : ''}" onerror="this.src='https://via.placeholder.com/300x200?text=Produk'">
+                <img src="${mainImage}" alt="${p.nama}" onclick='showDetail(${pData})' class="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity ${p.stok === 0 ? 'grayscale opacity-60' : ''}" onerror="this.src='/assets/img/placeholder.png'">
                 <div class="p-6">
                     <div class="flex justify-between items-start mb-2">
                         <h4 class="text-lg font-bold text-gray-800">${p.nama}</h4>
@@ -581,7 +581,7 @@ function updateCartUI() {
             total += itemTotal;
             
             const images = item.gambar ? item.gambar.split(',') : [];
-            let mainImage = images[0] || 'https://via.placeholder.com/100x100?text=Produk';
+            let mainImage = images[0] || '/assets/img/placeholder.png';
             if (item.selectedVariation && item.selectedVariation.gambar) {
                 mainImage = item.selectedVariation.gambar;
             }
@@ -742,8 +742,8 @@ function showDetail(p) {
     if (typeof initializeSlider === 'function') {
         initializeSlider(images);
     } else if (imageEl) {
-        imageEl.src = images.length > 0 ? images[0] : 'https://via.placeholder.com/300x200?text=Produk';
-        imageEl.onerror = function() { this.src = 'https://via.placeholder.com/300x200?text=Produk'; };
+        imageEl.src = images.length > 0 ? images[0] : '/assets/img/placeholder.png';
+        imageEl.onerror = function() { this.src = '/assets/img/placeholder.png'; };
     }
 
     if (itemsListEl) {
@@ -1290,7 +1290,7 @@ function renderRewardItems(rewards) {
         const id = r.id || '';
         const nama = r.nama || r.judul || 'Hadiah';
         const poin = r.poin || 0;
-        const gambar = r.gambar || 'https://via.placeholder.com/100?text=Reward';
+        const gambar = r.gambar || '/assets/img/placeholder.png';
         const deskripsi = r.deskripsi || '';
 
         return `

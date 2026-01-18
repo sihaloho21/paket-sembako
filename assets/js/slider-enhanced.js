@@ -19,7 +19,7 @@ function initializeSlider(images) {
     if (!slider) return;
     
     // Reset state
-    sliderState.images = images && images.length > 0 ? images : ['https://via.placeholder.com/600x400?text=Produk'];
+    sliderState.images = images && images.length > 0 ? images : ['/assets/img/placeholder.png'];
     sliderState.currentIndex = 0;
     sliderState.totalSlides = sliderState.images.length;
     
@@ -40,7 +40,7 @@ function initializeSlider(images) {
         img.style.zIndex = index === 0 ? '1' : '0';
         
         img.onerror = function() {
-            this.src = 'https://via.placeholder.com/600x400?text=Gambar+Tidak+Tersedia';
+            this.src = '/assets/img/placeholder.png';
         };
         
         img.onload = function() {
@@ -237,3 +237,25 @@ document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') closeLightbox();
     }
 });
+
+// Export functions for ES modules
+export {
+    initializeSlider,
+    nextSlide,
+    prevSlide,
+    goToSlide,
+    openLightbox,
+    closeLightbox,
+    lightboxNext,
+    lightboxPrev
+};
+
+// Make functions globally available for inline event handlers
+window.initializeSlider = initializeSlider;
+window.nextSlide = nextSlide;
+window.prevSlide = prevSlide;
+window.goToSlide = goToSlide;
+window.openLightbox = openLightbox;
+window.closeLightbox = closeLightbox;
+window.lightboxNext = lightboxNext;
+window.lightboxPrev = lightboxPrev;

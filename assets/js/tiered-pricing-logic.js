@@ -2,6 +2,8 @@
  * Tiered Pricing Logic for Customer Side
  */
 
+import { logger } from './logger.js';
+
 /**
  * Calculate tiered price based on quantity
  * @param {number} basePrice - The original price
@@ -17,7 +19,7 @@ function calculateTieredPrice(basePrice, quantity, tieredPrices) {
         try {
             tiers = JSON.parse(tieredPrices);
         } catch (e) {
-            console.error('Error parsing tiered prices:', e);
+            logger.error('Error parsing tiered prices:', e);
             return basePrice;
         }
     } else {
@@ -159,9 +161,14 @@ function updateTieredPricingUI(product, currentQty = 1) {
     }
 }
 
-// Export for use in other scripts
-if (typeof window !== 'undefined') {
-    window.calculateTieredPrice = calculateTieredPrice;
-    window.getNextTierInfo = getNextTierInfo;
-    window.updateTieredPricingUI = updateTieredPricingUI;
-}
+// Export for ES modules
+export {
+    calculateTieredPrice,
+    getNextTierInfo,
+    updateTieredPricingUI
+};
+
+// Make available globally for inline handlers
+window.calculateTieredPrice = calculateTieredPrice;
+window.getNextTierInfo = getNextTierInfo;
+window.updateTieredPricingUI = updateTieredPricingUI;

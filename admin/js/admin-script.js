@@ -378,7 +378,7 @@ function renderAdminTable() {
         <tr class="hover:bg-gray-50 transition">
             <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
-                    <img src="${p.gambar ? p.gambar.split(',')[0] : 'https://via.placeholder.com/50'}" class="w-10 h-10 object-cover rounded-lg bg-gray-100">
+                    <img src="${p.gambar ? p.gambar.split(',')[0] : '/assets/img/placeholder.png'}" class="w-10 h-10 object-cover rounded-lg bg-gray-100">
                     <span class="font-bold text-gray-800 text-sm">${p.nama}</span>
                 </div>
             </td>
@@ -575,7 +575,7 @@ function renderTukarPoinTable() {
         <tr class="hover:bg-gray-50 transition">
             <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
-                    <img src="${p.gambar || 'https://via.placeholder.com/50'}" class="w-10 h-10 object-cover rounded-lg bg-gray-100" alt="${p.judul}">
+                    <img src="${p.gambar || '/assets/img/placeholder.png'}" class="w-10 h-10 object-cover rounded-lg bg-gray-100" alt="${p.judul}">
                     <span class="font-bold text-gray-800 text-sm">${p.judul || p.nama}</span>
                 </div>
             </td>

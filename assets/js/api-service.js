@@ -4,7 +4,10 @@
  * Solves rate limit (429) errors and improves performance
  */
 
-const ApiService = {
+import { CONFIG } from './config.js';
+import { logger } from './logger.js';
+
+export const ApiService = {
     // Cache storage
     cache: new Map(),
     
@@ -40,18 +43,18 @@ const ApiService = {
             const cacheDuration = options.cacheDuration || this.DEFAULT_CACHE_DURATION;
             
             if (Date.now() - cached.timestamp < cacheDuration) {
-                console.log('📦 [ApiService] Using cached data:', endpoint);
+                logger.log('📦 [ApiService] Using cached data:', endpoint);
                 return cached.data;
             } else {
                 // Cache expired, remove it
-                console.log('⏰ [ApiService] Cache expired:', endpoint);
+                logger.log('⏰ [ApiService] Cache expired:', endpoint);
                 this.cache.delete(cacheKey);
             }
         }
         
         // Check if there's already a pending request for this endpoint
         if (this.pendingRequests.has(cacheKey)) {
-            console.log('⏳ [ApiService] Waiting for pending request:', endpoint);
+            logger.log('⏳ [ApiService] Waiting for pending request:', endpoint);
             return this.pendingRequests.get(cacheKey);
         }
         
@@ -68,12 +71,12 @@ const ApiService = {
                     data,
                     timestamp: Date.now()
                 });
-                console.log('💾 [ApiService] Data cached:', endpoint);
+                logger.log('💾 [ApiService] Data cached:', endpoint);
             }
             
             return data;
         } catch (error) {
-            console.error('❌ [ApiService] Request failed:', endpoint, error);
+            logger.error('❌ [ApiService] Request failed:', endpoint, error);
             throw error;
         } finally {
             // Remove from pending requests
@@ -91,7 +94,7 @@ const ApiService = {
         
         for (let attempt = 0; attempt < maxRetries; attempt++) {
             try {
-                console.log(`🌐 [ApiService] Request attempt ${attempt + 1}/${maxRetries}:`, url);
+                logger.log(`🌐 [ApiService] Request attempt ${attempt + 1}/${maxRetries}:`, url);
                 
                 const response = await fetch(url, {
                     method: options.method || 'GET',
@@ -104,7 +107,7 @@ const ApiService = {
                 if (response.status === 429) {
                     if (attempt < maxRetries - 1) {
                         const waitTime = this._calculateBackoff(attempt);
-                        console.warn(`⏱️ [ApiService] Rate limited (429), retrying in ${waitTime}ms...`);
+                        logger.warn(`⏱️ [ApiService] Rate limited (429), retrying in ${waitTime}ms...`);
                         await this._sleep(waitTime);
                         continue;
                     } else {
@@ -119,7 +122,7 @@ const ApiService = {
                 
                 // Success
                 const data = await response.json();
-                console.log('✅ [ApiService] Request successful:', url);
+                logger.log('✅ [ApiService] Request successful:', url);
                 return data;
                 
             } catch (error) {
@@ -128,7 +131,7 @@ const ApiService = {
                 // If it's a network error and we have retries left, try again
                 if (attempt < maxRetries - 1 && this._isRetryableError(error)) {
                     const waitTime = this._calculateBackoff(attempt);
-                    console.warn(`🔄 [ApiService] Retry ${attempt + 1}/${maxRetries} after ${waitTime}ms:`, error.message);
+                    logger.warn(`🔄 [ApiService] Retry ${attempt + 1}/${maxRetries} after ${waitTime}ms:`, error.message);
                     await this._sleep(waitTime);
                     continue;
                 }
@@ -185,7 +188,7 @@ const ApiService = {
     clearCache() {
         const size = this.cache.size;
         this.cache.clear();
-        console.log(`🗑️ [ApiService] Cache cleared: ${size} entries removed`);
+        logger.log(`🗑️ [ApiService] Cache cleared: ${size} entries removed`);
         return size;
     },
     
@@ -203,7 +206,7 @@ const ApiService = {
             }
         }
         
-        console.log(`🗑️ [ApiService] Cache cleared for ${endpoint}: ${cleared} entries`);
+        logger.log(`🗑️ [ApiService] Cache cleared for ${endpoint}: ${cleared} entries`);
         return cleared;
     },
     
@@ -272,5 +275,4 @@ const ApiService = {
     }
 };
 
-// Make it globally available
-window.ApiService = ApiService;
+

@@ -46,7 +46,7 @@ function renderTieredPricingList() {
                 <div class="flex items-start justify-between">
                     <div class="flex-1">
                         <div class="flex items-center gap-3 mb-3">
-                            <img src="${product.gambar ? product.gambar.split(',')[0] : 'https://via.placeholder.com/50'}" 
+                            <img src="${product.gambar ? product.gambar.split(',')[0] : '/assets/img/placeholder.png'}" 
                                  class="w-12 h-12 object-cover rounded-lg bg-gray-100">
                             <div>
                                 <h4 class="font-bold text-gray-800">${product.nama}</h4>
