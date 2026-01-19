@@ -8,12 +8,11 @@ import { logger } from './logger.js';
 
 export const CONFIG = {
     // Default API URLs
-    DEFAULTS: {
-        MAIN_API: 'https://sheetdb.io/api/v1/tuhdgrr6ngocm',
-        ADMIN_API: 'https://sheetdb.io/api/v1/tuhdgrr6ngocm',
-        // Secret key untuk autentikasi (jika diperlukan)
-        API_SECRET_KEY: 'PAKET-SEMBAKO-RAHASIA-2026',
-    },
+DEFAULTS: {
+    MAIN_API: 'https://script.google.com/macros/s/AKfycbxPlWkZ2AqFgo0-AfK02wIcrQ1HG7B9bIh1UCCcZqW9t79wh4uzNC8Lxxq-o8ybPa1b/exec',
+    ADMIN_API: 'https://script.google.com/macros/s/AKfycbxPlWkZ2AqFgo0-AfK02wIcrQ1HG7B9bIh1UCCcZqW9t79wh4uzNC8Lxxq-o8ybPa1b/exec',
+    API_SECRET_KEY: 'PAKET-SEMBAKO-RAHASIA-2026',
+},
     
     // Storage keys
     STORAGE_KEYS: {
