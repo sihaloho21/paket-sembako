@@ -293,6 +293,91 @@ class ApiServiceGAS {
             keys: Array.from(this.cache.keys())
         };
     }
+
+    // ============ BACKWARD COMPATIBILITY METHODS ============
+    
+    /**
+     * Backward compatibility: .get() method
+     * Parses query string and calls appropriate method
+     * @param {string} endpoint - Query string like "?sheet=products"
+     * @param {object} options - Options including cacheDuration
+     * @returns {Promise<Array>}
+     */
+    async get(endpoint, options = {}) {
+        // Parse the endpoint to extract sheet name
+        const params = new URLSearchParams(endpoint);
+        const sheetName = params.get('sheet');
+        
+        if (!sheetName) {
+            logger.error('[ApiServiceGAS] Panggilan .get() tidak menyertakan parameter ?sheet=');
+            return Promise.reject(new Error('Parameter sheet tidak ditemukan'));
+        }
+        
+        // Convert cacheDuration option to forceRefresh
+        const forceRefresh = options.cache === false;
+        
+        return this.getData(sheetName, { 
+            forceRefresh,
+            ...options 
+        });
+    }
+
+    /**
+     * Backward compatibility: .post() method
+     * @param {string} endpoint - Query string like "?sheet=orders"
+     * @param {object|array} data - Data to create
+     * @returns {Promise<object>}
+     */
+    async post(endpoint, data) {
+        const params = new URLSearchParams(endpoint);
+        const sheetName = params.get('sheet');
+        
+        if (!sheetName) {
+            logger.error('[ApiServiceGAS] Panggilan .post() tidak menyertakan parameter ?sheet=');
+            return Promise.reject(new Error('Parameter sheet tidak ditemukan'));
+        }
+        
+        return this.createData(sheetName, data);
+    }
+
+    /**
+     * Backward compatibility: .put() method
+     * @param {string} endpoint - Query string with ID
+     * @param {object} data - Data to update
+     * @returns {Promise<object>}
+     */
+    async put(endpoint, data) {
+        const params = new URLSearchParams(endpoint);
+        const sheetName = params.get('sheet');
+        const idMatch = endpoint.match(/\/id\/([^?]+)/);
+        const id = idMatch ? idMatch[1] : null;
+        
+        if (!sheetName || !id) {
+            logger.error('[ApiServiceGAS] Panggilan .put() memerlukan ?sheet= dan /id/');
+            return Promise.reject(new Error('Parameter sheet atau id tidak ditemukan'));
+        }
+        
+        return this.updateData(sheetName, { id }, data);
+    }
+
+    /**
+     * Backward compatibility: .delete() method
+     * @param {string} endpoint - Query string with ID
+     * @returns {Promise<object>}
+     */
+    async delete(endpoint) {
+        const params = new URLSearchParams(endpoint);
+        const sheetName = params.get('sheet');
+        const idMatch = endpoint.match(/\/id\/([^?]+)/);
+        const id = idMatch ? idMatch[1] : null;
+        
+        if (!sheetName || !id) {
+            logger.error('[ApiServiceGAS] Panggilan .delete() memerlukan ?sheet= dan /id/');
+            return Promise.reject(new Error('Parameter sheet atau id tidak ditemukan'));
+        }
+        
+        return this.deleteData(sheetName, { id });
+    }
 }
 
 // Export singleton instance

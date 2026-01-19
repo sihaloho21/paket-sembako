@@ -680,8 +680,20 @@
         </div>
     </div>
 
-    <script src="../assets/js/config.js"></script>
-    <script src="../assets/js/api-service.js"></script>
+    <!-- Load ES Modules -->
+    <script type="module" src="../assets/js/logger.js"></script>
+    <script type="module" src="../assets/js/config.js"></script>
+    <script type="module" src="../assets/js/api-service.js"></script>
+    <script type="module">
+        // Import dan expose ke window untuk backward compatibility
+        import { CONFIG } from '../assets/js/config.js';
+        import { ApiService } from '../assets/js/api-service.js';
+        import { logger } from '../assets/js/logger.js';
+        
+        window.CONFIG = CONFIG;
+        window.ApiService = ApiService;
+        window.logger = logger;
+    </script>
     <script src="js/tiered-pricing.js"></script>
     <script src="js/admin-script.js"></script>
     <!-- Toast Container -->

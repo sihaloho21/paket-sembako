@@ -5,6 +5,7 @@
  */
 
 import { CONFIG } from './config.js';
+import { ApiService } from './api-service.js';
 import { calculateGajianPrice, calculateRewardPoints } from './payment-logic.js';
 import { logger } from './logger.js';
 
@@ -28,8 +29,10 @@ class BundleCarousel {
 
     async fetchBundles() {
         try {
-            const response = await fetch(CONFIG.getMainApiUrl());
-            const allProducts = await response.json();
+            // Gunakan ApiService dengan caching
+            const allProducts = await ApiService.get('?sheet=products', {
+                cacheDuration: 5 * 60 * 1000 // 5 menit cache
+            });
             
             // Filter dan map produk dengan kategori "Paket"
             this.bundles = allProducts

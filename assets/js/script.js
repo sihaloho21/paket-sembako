@@ -5,7 +5,7 @@
 function getApiUrl() {
     // Use CONFIG.getMainApiUrl() which handles localStorage with correct key
     const apiUrl = CONFIG.getMainApiUrl();
-    console.log('Using API URL:', apiUrl);
+    logger.log('Using API URL:', apiUrl);
     return apiUrl;
 }
 
@@ -17,7 +17,7 @@ let API_URL = getApiUrl();
  */
 function refreshApiUrl() {
     API_URL = getApiUrl();
-    console.log('API URL refreshed:', API_URL);
+    logger.log('API URL refreshed:', API_URL);
     // Reload products with new API
     fetchProducts();
 }
@@ -39,7 +39,7 @@ async function fetchProducts() {
         const products = await ApiService.get('?sheet=products', {
             cacheDuration: 5 * 60 * 1000 // 5 minutes cache
         });
-        console.log('Products received:', products);
+        logger.log('Products received:', products);
         
         allProducts = products.map(p => {
             const cashPrice = parseInt(p.harga) || 0;
@@ -59,7 +59,7 @@ async function fetchProducts() {
                 try {
                     variations = JSON.parse(p.variasi);
                 } catch (e) {
-                    console.error('Error parsing variations for product:', p.id, e);
+                    logger.error('Error parsing variations for product:', p.id, e);
                 }
             }
 
@@ -79,7 +79,7 @@ async function fetchProducts() {
         checkStoreStatus();
         startNotificationLoop();
     } catch (error) {
-        console.error('Error fetching products:', error);
+        logger.error('Error fetching products:', error);
         const grid = document.getElementById('product-grid');
         if (grid) {
             grid.innerHTML = '<p class="text-center col-span-full text-red-500">Gagal memuat produk. Silakan coba lagi nanti.</p>';
@@ -144,7 +144,7 @@ function renderProducts(products) {
                     `;
                 }
             } catch (e) {
-                console.error('Error parsing grosir data for product:', p.id, e);
+                logger.error('Error parsing grosir data for product:', p.id, e);
             }
         }
 
@@ -656,7 +656,7 @@ function updateModalQty(delta) {
 }
 
 function showDetail(p) {
-    console.log('showDetail called for product:', p.nama);
+    logger.log('showDetail called for product:', p.nama);
     const modal = document.getElementById('detail-modal');
     if (!modal) return;
 
@@ -1212,10 +1212,10 @@ function sendToWA() {
     // Use ApiService to log order (no caching for POST)
     ApiService.post('?sheet=orders', [orderData])
         .then(data => {
-            console.log('Order logged to spreadsheet:', data);
+            logger.log('Order logged to spreadsheet:', data);
         })
         .catch(err => {
-            console.error('Error logging order:', err);
+            logger.error('Error logging order:', err);
         })
     .finally(() => {
         // Clear cart after order
@@ -1264,7 +1264,7 @@ async function fetchTukarPoin() {
         });
         renderRewardItems(rewards);
     } catch (error) {
-        console.error('Error fetching reward items:', error);
+        logger.error('Error fetching reward items:', error);
         rewardList.innerHTML = `
             <div class="text-center py-6 bg-red-50 rounded-2xl border-2 border-dashed border-red-200">
                 <p class="text-xs text-red-600 font-semibold">Gagal memuat hadiah. Silakan coba lagi nanti.</p>
@@ -1387,7 +1387,7 @@ function checkUserPoints() {
             display.classList.remove('hidden');
         })
         .catch(error => {
-            console.error('Error checking points:', error);
+            logger.error('Error checking points:', error);
             alert('Gagal mengecek poin. Silakan coba lagi.');
         })
         .finally(() => {
@@ -1478,7 +1478,7 @@ async function claimReward(rewardId) {
         }, 1500);
 
     } catch (error) {
-        console.error('Error in claimReward:', error);
+        logger.error('Error in claimReward:', error);
         alert('Terjadi kesalahan saat memproses penukaran: ' + error.message);
     }
 }
@@ -1553,7 +1553,7 @@ async function showConfirmTukarModal(rewardId) {
         document.body.classList.add('modal-active');
 
     } catch (error) {
-        console.error('Error showing confirm modal:', error);
+        logger.error('Error showing confirm modal:', error);
         showToast('Terjadi kesalahan saat memproses permintaan Anda.');
     }
 }
@@ -1696,7 +1696,7 @@ async function processClaimReward(rewardId, customerName) {
         }, 1500);
 
     } catch (error) {
-        console.error('Error processing claim:', error);
+        logger.error('Error processing claim:', error);
         showToast('Gagal memproses penukaran. Silakan coba lagi.');
     }
 }

@@ -9,9 +9,9 @@ import { logger } from './logger.js';
 export const CONFIG = {
     // Default API URLs
     DEFAULTS: {
-        MAIN_API: 'https://script.google.com/macros/s/AKfycbzNiF5IOGmCm0bR1o-hukwKmVvieLjnrG7hzodXos5BJn9OvBQdddHcwPiAUoHfH2aN3Q/exec',
-        ADMIN_API: 'https://script.google.com/macros/s/AKfycbzNiF5IOGmCm0bR1o-hukwKmVvieLjnrG7hzodXos5BJn9OvBQdddHcwPiAUoHfH2aN3Q/exec',
-         // TAMBAHKAN SECRET KEY
+        MAIN_API: 'https://sheetdb.io/api/v1/tuhdgrr6ngocm',
+        ADMIN_API: 'https://sheetdb.io/api/v1/tuhdgrr6ngocm',
+        // Secret key untuk autentikasi (jika diperlukan)
         API_SECRET_KEY: 'PAKET-SEMBAKO-RAHASIA-2026',
     },
     
@@ -257,6 +257,29 @@ export const CONFIG = {
      */
     setStoreClosed(closed) {
         localStorage.setItem(this.STORAGE_KEYS.STORE_CLOSED, closed ? 'true' : 'false');
+    },
+
+    /**
+     * Generic getter untuk nilai konfigurasi
+     * @param {string} key - Kunci konfigurasi
+     * @returns {any} Nilai konfigurasi
+     */
+    get(key) {
+        // Cek jika key ada di dalam DEFAULTS
+        if (this.DEFAULTS.hasOwnProperty(key)) {
+            // Untuk URL API, gunakan metode getter spesifik
+            if (key === 'MAIN_API') {
+                return this.getMainApiUrl();
+            } else if (key === 'ADMIN_API') {
+                return this.getAdminApiUrl();
+            } else {
+                // Untuk nilai lain seperti API_SECRET_KEY, ambil langsung dari DEFAULTS
+                return this.DEFAULTS[key];
+            }
+        }
+        
+        logger.warn(`[CONFIG] Peringatan: Key '${key}' tidak ditemukan.`);
+        return undefined;
     },
 
     /**

@@ -79,18 +79,16 @@ function toggleStoreStatus() {
 
 async function updateDashboardStats() {
     try {
-        const [prodRes, orderRes] = await Promise.all([
-            fetch(`${API_URL}?sheet=${PRODUCTS_SHEET}`),
-            fetch(`${API_URL}?sheet=${ORDERS_SHEET}`)
-        ]);
-        const prods = await prodRes.json();
-        const orders = await orderRes.json();
+        const [prods, orders] = await Promise.all([
+            ApiService.get(`?sheet=${PRODUCTS_SHEET}`, { cache: false }),
+            ApiService.get(`?sheet=${ORDERS_SHEET}`, { cache: false })
+        });
         
         document.getElementById('stat-total-produk').innerText = prods.length || 0;
         document.getElementById('stat-total-pesanan').innerText = orders.length || 0;
         const lowStock = prods.filter(p => parseInt(p.stok) <= 5).length;
         document.getElementById('stat-stok-menipis').innerText = lowStock;
-    } catch (e) { console.error(e); }
+    } catch (e) { logger.error('Error updating dashboard stats:', e); }
 }
 
 // ============ ORDER FUNCTIONS ============
@@ -99,13 +97,12 @@ async function fetchOrders() {
     tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-10 text-center text-gray-500">Memuat data pesanan...</td></tr>';
     
     try {
-        const response = await fetch(`${API_URL}?sheet=${ORDERS_SHEET}`);
-        allOrders = await response.json();
+        allOrders = await ApiService.get(`?sheet=${ORDERS_SHEET}`, { cache: false });
         if (!Array.isArray(allOrders)) allOrders = [];
         renderOrderTable();
         updateOrderStats();
     } catch (error) {
-        console.error('Error:', error);
+        logger.error('Error:', error);
         tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-10 text-center text-red-500">Gagal memuat data pesanan.</td></tr>';
     }
 }
@@ -278,7 +275,7 @@ async function fetchCategories() {
         allCategories = await response.json();
         renderCategoryTable();
         updateCategoryDropdown();
-    } catch (error) { console.error(error); }
+    } catch (error) { logger.error('Error:', error); }
 }
 
 function renderCategoryTable() {
@@ -365,7 +362,7 @@ async function fetchAdminProducts() {
         allProducts = await response.json();
         renderAdminTable();
         updateDashboardStats();
-    } catch (error) { console.error(error); }
+    } catch (error) { logger.error('Error:', error); }
 }
 
 function renderAdminTable() {
@@ -560,7 +557,7 @@ async function fetchTukarPoin() {
         if (!Array.isArray(allTukarPoin)) allTukarPoin = [];
         renderTukarPoinTable();
     } catch (error) {
-        console.error('Error:', error);
+        logger.error('Error:', error);
         tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-red-500">Gagal memuat data tukar poin. Pastikan sheet "tukar_poin" sudah ada.</td></tr>';
     }
 }
@@ -727,7 +724,7 @@ async function fetchUserPoints() {
                 </td>
             </tr>
         `).join('');
-    } catch (error) { console.error(error); }
+    } catch (error) { logger.error('Error:', error); }
 }
 
 async function editUserPoints(phone, currentPoints) {
