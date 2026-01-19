@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengaturan API - Admin Paket Sembako</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        .settings-container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .settings-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .settings-card h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #4682b4;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="url"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4682b4;
+            box-shadow: 0 0 5px rgba(70, 130, 180, 0.3);
+        }
+
+        .form-group .help-text {
+            font-size: 12px;
+            color: #777;
+            margin-top: 5px;
+        }
+
+        .btn-primary {
+            background: #4682b4;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: #36648b;
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-test {
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .btn-test:hover {
+            background: #218838;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .config-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #4682b4;
+            margin-bottom: 20px;
+        }
+
+        .config-info strong {
+            color: #4682b4;
+        }
+    </style>
+</head>
+<body>
+    <div class="settings-container">
+        <h1>⚙️ Pengaturan Sistem</h1>
+        
+        <!-- Alert Messages -->
+        <div id="alert-container"></div>
+
+        <!-- API Configuration Card -->
+        <div class="settings-card">
+            <h2>Konfigurasi API SheetDB</h2>
+            
+            <div class="config-info">
+                <p><strong>ℹ️ Informasi:</strong> Jika API SheetDB Anda sudah mencapai limit, Anda dapat membuat API baru di SheetDB dan mengganti URL-nya di sini. Perubahan akan langsung aktif tanpa perlu redeploy website.</p>
+            </div>
+
+            <form id="api-config-form">
+                <div class="form-group">
+                    <label for="sheetdb-api-url">
+                        URL API SheetDB Aktif
+                        <span id="api-status" class="status-indicator status-active">● Aktif</span>
+                    </label>
+                    <input 
+                        type="url" 
+                        id="sheetdb-api-url" 
+                        name="sheetdb_api_url" 
+                        placeholder="https://sheetdb.io/api/v1/xxxxxxxxxxxxx"
+                        required
+                    >
+                    <div class="help-text">
+                        Masukkan URL lengkap API SheetDB Anda. Contoh: https://sheetdb.io/api/v1/tuhdgrr6ngocm
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="api-description">Deskripsi / Catatan (Opsional)</label>
+                    <input 
+                        type="text" 
+                        id="api-description" 
+                        name="api_description" 
+                        placeholder="Contoh: API Utama - Dibuat 19 Jan 2026"
+                    >
+                    <div class="help-text">
+                        Tambahkan catatan untuk memudahkan tracking API mana yang sedang digunakan.
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <button type="button" id="test-api-btn" class="btn-test">🧪 Test Koneksi</button>
+                    <button type="submit" id="save-btn" class="btn-primary">💾 Simpan Konfigurasi</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- API History Card -->
+        <div class="settings-card">
+            <h2>Riwayat Perubahan API</h2>
+            <div id="api-history">
+                <p style="color: #777;">Memuat riwayat...</p>
+            </div>
+        </div>
+
+        <!-- Backup & Restore Card -->
+        <div class="settings-card">
+            <h2>Backup & Restore</h2>
+            <div class="config-info">
+                <p><strong>💡 Tips:</strong> Simpan URL API lama Anda sebagai backup. Jika API baru bermasalah, Anda bisa dengan cepat kembali ke API lama.</p>
+            </div>
+            <button type="button" id="export-config-btn" class="btn-primary">📥 Export Konfigurasi</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { ApiService } from '../assets/js/api-service.js';
+        import { logger } from '../assets/js/logger.js';
+
+        class SettingsManager {
+            constructor() {
+                this.api = new ApiService();
+                this.init();
+            }
+
+            async init() {
+                try {
+                    await this.loadCurrentConfig();
+                    await this.loadHistory();
+                    this.setupEventListeners();
+                } catch (error) {
+                    logger.error('Gagal inisialisasi settings:', error);
+                    this.showAlert('Gagal memuat pengaturan. Silakan refresh halaman.', 'error');
+                }
+            }
+
+            async loadCurrentConfig() {
+                try {
+                    const response = await this.api.get('/?action=getConfig&key=sheetdb_api_url');
+                    
+                    if (response.success) {
+                        document.getElementById('sheetdb-api-url').value = response.value || '';
+                        document.getElementById('api-description').value = response.description || '';
+                        
+                        // Update status indicator
+                        const statusEl = document.getElementById('api-status');
+                        if (response.value) {
+                            statusEl.className = 'status-indicator status-active';
+                            statusEl.textContent = '● Aktif';
+                        } else {
+                            statusEl.className = 'status-indicator status-error';
+                            statusEl.textContent = '● Tidak Ada';
+                        }
+                    }
+                } catch (error) {
+                    logger.error('Gagal memuat konfigurasi:', error);
+                }
+            }
+
+            async loadHistory() {
+                try {
+                    const response = await this.api.get('/?action=getConfigHistory&limit=10');
+                    
+                    if (response.success && response.history.length > 0) {
+                        const historyHtml = response.history.map(item => `
+                            <div style="padding: 10px; border-bottom: 1px solid #eee;">
+                                <strong>${this.formatDate(item.timestamp)}</strong><br>
+                                <small style="color: #666;">${item.url}</small><br>
+                                <small style="color: #999;">${item.description || 'Tidak ada deskripsi'}</small>
+                            </div>
+                        `).join('');
+                        
+                        document.getElementById('api-history').innerHTML = historyHtml;
+                    } else {
+                        document.getElementById('api-history').innerHTML = '<p style="color: #777;">Belum ada riwayat perubahan.</p>';
+                    }
+                } catch (error) {
+                    logger.error('Gagal memuat riwayat:', error);
+                    document.getElementById('api-history').innerHTML = '<p style="color: #d9534f;">Gagal memuat riwayat.</p>';
+                }
+            }
+
+            setupEventListeners() {
+                // Form submit
+                document.getElementById('api-config-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveConfig();
+                });
+
+                // Test API button
+                document.getElementById('test-api-btn').addEventListener('click', () => {
+                    this.testApiConnection();
+                });
+
+                // Export config button
+                document.getElementById('export-config-btn').addEventListener('click', () => {
+                    this.exportConfig();
+                });
+            }
+
+            async saveConfig() {
+                const saveBtn = document.getElementById('save-btn');
+                const originalText = saveBtn.textContent;
+                
+                try {
+                    // Disable button dan tampilkan loading
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = '<span class="loading-spinner"></span> Menyimpan...';
+
+                    const url = document.getElementById('sheetdb-api-url').value.trim();
+                    const description = document.getElementById('api-description').value.trim();
+
+                    // Validasi URL
+                    if (!this.isValidSheetDBUrl(url)) {
+                        throw new Error('URL SheetDB tidak valid. Pastikan format: https://sheetdb.io/api/v1/...');
+                    }
+
+                    // Kirim ke backend
+                    const response = await this.api.post('/?action=setConfig', {
+                        key: 'sheetdb_api_url',
+                        value: url,
+                        description: description
+                    });
+
+                    if (response.success) {
+                        this.showAlert('✅ Konfigurasi berhasil disimpan! API baru sudah aktif.', 'success');
+                        await this.loadHistory();
+                        
+                        // Update status
+                        const statusEl = document.getElementById('api-status');
+                        statusEl.className = 'status-indicator status-active';
+                        statusEl.textContent = '● Aktif';
+                    } else {
+                        throw new Error(response.message || 'Gagal menyimpan konfigurasi');
+                    }
+
+                } catch (error) {
+                    logger.error('Gagal menyimpan konfigurasi:', error);
+                    this.showAlert('❌ ' + error.message, 'error');
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = originalText;
+                }
+            }
+
+            async testApiConnection() {
+                const testBtn = document.getElementById('test-api-btn');
+                const originalText = testBtn.textContent;
+                
+                try {
+                    testBtn.disabled = true;
+                    testBtn.innerHTML = '<span class="loading-spinner"></span> Testing...';
+
+                    const url = document.getElementById('sheetdb-api-url').value.trim();
+
+                    if (!url) {
+                        throw new Error('Masukkan URL API terlebih dahulu');
+                    }
+
+                    // Test koneksi dengan memanggil endpoint test
+                    const response = await this.api.post('/?action=testApiConnection', {
+                        test_url: url
+                    });
+
+                    if (response.success) {
+                        this.showAlert(`✅ Koneksi berhasil! Ditemukan ${response.record_count || 0} data.`, 'success');
+                    } else {
+                        throw new Error(response.message || 'Koneksi gagal');
+                    }
+
+                } catch (error) {
+                    logger.error('Test koneksi gagal:', error);
+                    this.showAlert('❌ Test koneksi gagal: ' + error.message, 'error');
+                } finally {
+                    testBtn.disabled = false;
+                    testBtn.textContent = originalText;
+                }
+            }
+
+            exportConfig() {
+                const url = document.getElementById('sheetdb-api-url').value;
+                const description = document.getElementById('api-description').value;
+                
+                const config = {
+                    sheetdb_api_url: url,
+                    description: description,
+                    exported_at: new Date().toISOString()
+                };
+
+                const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+                const downloadUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `api-config-backup-${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(downloadUrl);
+
+                this.showAlert('✅ Konfigurasi berhasil di-export!', 'success');
+            }
+
+            isValidSheetDBUrl(url) {
+                try {
+                    const urlObj = new URL(url);
+                    return urlObj.hostname === 'sheetdb.io' && urlObj.pathname.includes('/api/v1/');
+                } catch {
+                    return false;
+                }
+            }
+
+            showAlert(message, type) {
+                const container = document.getElementById('alert-container');
+                const alert = document.createElement('div');
+                alert.className = `alert alert-${type}`;
+                alert.textContent = message;
+                
+                container.innerHTML = '';
+                container.appendChild(alert);
+
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    alert.classList.add('hidden');
+                    setTimeout(() => alert.remove(), 300);
+                }, 5000);
+            }
+
+            formatDate(timestamp) {
+                const date = new Date(timestamp);
+                return date.toLocaleString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            new SettingsManager();
+        });
+    </script>
+</body>
+</html>
