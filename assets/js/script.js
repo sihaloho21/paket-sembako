@@ -1,3 +1,9 @@
+// Import dependencies
+import { CONFIG } from './config.js';
+import { logger } from './logger.js';
+import { ApiService } from './api-service.js';
+import { calculateGajianPrice } from './payment-logic.js';
+
 /**
  * Get API URL from localStorage (set by admin) or fallback to CONFIG
  * This allows admin to change API dynamically without code changes
@@ -1015,7 +1021,8 @@ function showNotification(text) {
 }
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+// Check if DOM is already loaded (since script.js is dynamically imported)
+function initializeApp() {
     fetchProducts();
     fetchTukarPoin();
 
@@ -1033,7 +1040,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-});
+}
+
+// Execute initialization
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    // DOM already loaded, execute immediately
+    initializeApp();
+}
 
 function toggleLocationField() {
     const shipEl = document.querySelector('input[name="ship-method"]:checked');
