@@ -10,7 +10,9 @@ export const CONFIG = {
     // Default API URLs
     DEFAULTS: {
         MAIN_API: 'https://script.google.com/macros/s/AKfycbzNiF5IOGmCm0bR1o-hukwKmVvieLjnrG7hzodXos5BJn9OvBQdddHcwPiAUoHfH2aN3Q/exec',
-        ADMIN_API: 'https://script.google.com/macros/s/AKfycbzNiF5IOGmCm0bR1o-hukwKmVvieLjnrG7hzodXos5BJn9OvBQdddHcwPiAUoHfH2aN3Q/exec'
+        ADMIN_API: 'https://script.google.com/macros/s/AKfycbzNiF5IOGmCm0bR1o-hukwKmVvieLjnrG7hzodXos5BJn9OvBQdddHcwPiAUoHfH2aN3Q/exec',
+         // TAMBAHKAN SECRET KEY
+        API_SECRET_KEY: 'PAKET-SEMBAKO-RAHASIA-2026',
     },
     
     // Storage keys
