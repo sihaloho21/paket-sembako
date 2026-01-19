@@ -1,278 +1,304 @@
 /**
- * API Service Wrapper
- * Provides caching, retry logic, error handling, and request deduplication
- * Solves rate limit (429) errors and improves performance
+ * API Service untuk Google Apps Script
+ * Menggantikan api-service.js yang menggunakan SheetDB
+ * 
+ * Fitur:
+ * - Full CRUD operations
+ * - Client-side caching
+ * - Request deduplication
+ * - Retry logic dengan exponential backoff
+ * - Error handling yang konsisten
  */
 
 import { CONFIG } from './config.js';
 import { logger } from './logger.js';
 
-export const ApiService = {
-    // Cache storage
-    cache: new Map(),
-    
-    // Pending requests to prevent duplicates
-    pendingRequests: new Map(),
-    
-    // Default cache duration (5 minutes)
-    DEFAULT_CACHE_DURATION: 5 * 60 * 1000,
-    
-    // Default retry configuration
-    MAX_RETRIES: 3,
-    INITIAL_RETRY_DELAY: 1000, // 1 second
-    
+class ApiServiceGAS {
+    constructor() {
+        this.cache = new Map();
+        this.pendingRequests = new Map();
+        this.cacheConfig = {
+            products: 300000,      // 5 menit
+            orders: 60000,         // 1 menit
+            customers: 120000,     // 2 menit
+            rewards: 300000,       // 5 menit
+            default: 180000        // 3 menit
+        };
+    }
+
     /**
-     * Main fetch method with caching and retry logic
-     * @param {string} endpoint - API endpoint (e.g., '?sheet=products')
-     * @param {object} options - Fetch options
-     * @param {boolean} options.cache - Enable caching (default: true)
-     * @param {number} options.cacheDuration - Cache duration in ms (default: 5 minutes)
-     * @param {number} options.maxRetries - Max retry attempts (default: 3)
-     * @returns {Promise} Response data
+     * GET Request - Membaca data dari sheet
+     * @param {string} sheetName - Nama sheet (products, orders, customers, rewards)
+     * @param {object} options - Optional parameters
+     * @returns {Promise<Array>}
      */
-    async fetch(endpoint, options = {}) {
-        const url = `${CONFIG.getMainApiUrl()}${endpoint}`;
-        const cacheKey = this._generateCacheKey(url, options);
+    async getData(sheetName, options = {}) {
+        const { forceRefresh = false, searchParams = null } = options;
         
-        // Check if caching is enabled (default: true)
-        const cacheEnabled = options.cache !== false;
-        
-        // Check cache first
-        if (cacheEnabled && this.cache.has(cacheKey)) {
+        // Buat cache key
+        const cacheKey = searchParams 
+            ? `${sheetName}_search_${JSON.stringify(searchParams)}`
+            : `${sheetName}_all`;
+
+        // Cek cache jika tidak force refresh
+        if (!forceRefresh && this.cache.has(cacheKey)) {
             const cached = this.cache.get(cacheKey);
-            const cacheDuration = options.cacheDuration || this.DEFAULT_CACHE_DURATION;
-            
-            if (Date.now() - cached.timestamp < cacheDuration) {
-                logger.log('📦 [ApiService] Using cached data:', endpoint);
+            if (Date.now() - cached.timestamp < this.getCacheDuration(sheetName)) {
+                logger.log(`[ApiServiceGAS] Cache hit: ${cacheKey}`);
                 return cached.data;
-            } else {
-                // Cache expired, remove it
-                logger.log('⏰ [ApiService] Cache expired:', endpoint);
-                this.cache.delete(cacheKey);
             }
         }
-        
-        // Check if there's already a pending request for this endpoint
+
+        // Cek apakah ada request yang sama sedang berjalan
         if (this.pendingRequests.has(cacheKey)) {
-            logger.log('⏳ [ApiService] Waiting for pending request:', endpoint);
+            logger.log(`[ApiServiceGAS] Reusing pending request: ${cacheKey}`);
             return this.pendingRequests.get(cacheKey);
         }
-        
-        // Create new request with retry logic
-        const requestPromise = this._fetchWithRetry(url, options);
+
+        // Buat request baru
+        const requestPromise = this._executeGetRequest(sheetName, searchParams);
         this.pendingRequests.set(cacheKey, requestPromise);
-        
+
         try {
             const data = await requestPromise;
             
-            // Cache the result if caching is enabled
-            if (cacheEnabled) {
-                this.cache.set(cacheKey, {
-                    data,
-                    timestamp: Date.now()
-                });
-                logger.log('💾 [ApiService] Data cached:', endpoint);
-            }
-            
+            // Simpan ke cache
+            this.cache.set(cacheKey, {
+                data: data,
+                timestamp: Date.now()
+            });
+
             return data;
-        } catch (error) {
-            logger.error('❌ [ApiService] Request failed:', endpoint, error);
-            throw error;
         } finally {
-            // Remove from pending requests
             this.pendingRequests.delete(cacheKey);
         }
-    },
-    
+    }
+
     /**
-     * Fetch with retry logic and exponential backoff
-     * @private
+     * POST Request - Create data baru
+     * @param {string} sheetName - Nama sheet
+     * @param {object|array} data - Data yang akan ditambahkan
+     * @returns {Promise<object>}
      */
-    async _fetchWithRetry(url, options) {
-        const maxRetries = options.maxRetries || this.MAX_RETRIES;
-        let lastError;
+    async createData(sheetName, data) {
+        const payload = {
+            action: 'create',
+            sheetName: sheetName,
+            data: data,
+            secretKey: CONFIG.get('API_SECRET_KEY')
+        };
+
+        const result = await this._executePostRequest(payload);
         
-        for (let attempt = 0; attempt < maxRetries; attempt++) {
+        // Invalidate cache setelah create
+        this.invalidateCache(sheetName);
+        
+        return result;
+    }
+
+    /**
+     * POST Request - Update data yang ada
+     * @param {string} sheetName - Nama sheet
+     * @param {object} condition - Kondisi untuk mencari data (contoh: { id: '123' })
+     * @param {object} newData - Data baru untuk update
+     * @returns {Promise<object>}
+     */
+    async updateData(sheetName, condition, newData) {
+        const payload = {
+            action: 'update',
+            sheetName: sheetName,
+            condition: condition,
+            data: newData,
+            secretKey: CONFIG.get('API_SECRET_KEY')
+        };
+
+        const result = await this._executePostRequest(payload);
+        
+        // Invalidate cache setelah update
+        this.invalidateCache(sheetName);
+        
+        return result;
+    }
+
+    /**
+     * POST Request - Delete data
+     * @param {string} sheetName - Nama sheet
+     * @param {object} condition - Kondisi untuk mencari data yang akan dihapus
+     * @returns {Promise<object>}
+     */
+    async deleteData(sheetName, condition) {
+        const payload = {
+            action: 'delete',
+            sheetName: sheetName,
+            condition: condition,
+            secretKey: CONFIG.get('API_SECRET_KEY')
+        };
+
+        const result = await this._executePostRequest(payload);
+        
+        // Invalidate cache setelah delete
+        this.invalidateCache(sheetName);
+        
+        return result;
+    }
+
+    /**
+     * Search data dengan kriteria tertentu
+     * @param {string} sheetName - Nama sheet
+     * @param {object} searchParams - Parameter pencarian (contoh: { kategori: 'sembako' })
+     * @returns {Promise<Array>}
+     */
+    async searchData(sheetName, searchParams) {
+        return this.getData(sheetName, { searchParams });
+    }
+
+    // --- PRIVATE METHODS --- //
+
+    /**
+     * Execute GET request ke Google Apps Script
+     */
+    async _executeGetRequest(sheetName, searchParams = null) {
+        const baseUrl = CONFIG.get('MAIN_API');
+        const params = new URLSearchParams({
+            action: searchParams ? 'search' : 'read',
+            sheet: sheetName
+        });
+
+        // Tambahkan search params jika ada
+        if (searchParams) {
+            Object.entries(searchParams).forEach(([key, value]) => {
+                params.append(key, value);
+            });
+        }
+
+        const url = `${baseUrl}?${params.toString()}`;
+
+        logger.log(`[ApiServiceGAS] GET Request: ${url}`);
+
+        const response = await this._fetchWithRetry(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.message || 'Request failed');
+        }
+
+        return result.data;
+    }
+
+    /**
+     * Execute POST request ke Google Apps Script
+     */
+    async _executePostRequest(payload) {
+        const url = CONFIG.get('ADMIN_API');
+
+        logger.log(`[ApiServiceGAS] POST Request: ${payload.action} on ${payload.sheetName}`);
+
+        const response = await this._fetchWithRetry(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.message || 'Request failed');
+        }
+
+        return result;
+    }
+
+    /**
+     * Fetch dengan retry logic (exponential backoff)
+     */
+    async _fetchWithRetry(url, options, maxRetries = 3) {
+        let lastError;
+
+        for (let i = 0; i < maxRetries; i++) {
             try {
-                logger.log(`🌐 [ApiService] Request attempt ${attempt + 1}/${maxRetries}:`, url);
-                
-                const response = await fetch(url, {
-                    method: options.method || 'GET',
-                    mode: 'cors',
-                    headers: options.headers || {},
-                    body: options.body
-                });
-                
-                // Handle rate limit (429)
-                if (response.status === 429) {
-                    if (attempt < maxRetries - 1) {
-                        const waitTime = this._calculateBackoff(attempt);
-                        logger.warn(`⏱️ [ApiService] Rate limited (429), retrying in ${waitTime}ms...`);
-                        await this._sleep(waitTime);
-                        continue;
-                    } else {
-                        throw new Error('Rate limit exceeded. Please try again later.');
-                    }
-                }
-                
-                // Handle other HTTP errors
+                const response = await fetch(url, options);
+
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-                
-                // Success
-                const data = await response.json();
-                logger.log('✅ [ApiService] Request successful:', url);
-                return data;
-                
+
+                return response;
             } catch (error) {
                 lastError = error;
-                
-                // If it's a network error and we have retries left, try again
-                if (attempt < maxRetries - 1 && this._isRetryableError(error)) {
-                    const waitTime = this._calculateBackoff(attempt);
-                    logger.warn(`🔄 [ApiService] Retry ${attempt + 1}/${maxRetries} after ${waitTime}ms:`, error.message);
-                    await this._sleep(waitTime);
-                    continue;
+                logger.error(`[ApiServiceGAS] Request failed (attempt ${i + 1}/${maxRetries}):`, error);
+
+                // Jangan retry jika error 4xx (client error)
+                if (error.message.includes('HTTP 4')) {
+                    throw error;
                 }
-                
-                // No more retries, throw error
-                break;
+
+                // Tunggu sebelum retry (exponential backoff)
+                if (i < maxRetries - 1) {
+                    const delay = Math.pow(2, i) * 1000; // 1s, 2s, 4s
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
             }
         }
-        
+
         throw lastError;
-    },
-    
+    }
+
     /**
-     * Calculate exponential backoff delay
-     * @private
+     * Get cache duration untuk sheet tertentu
      */
-    _calculateBackoff(attempt) {
-        // Exponential backoff: 1s, 2s, 4s, 8s, ...
-        return this.INITIAL_RETRY_DELAY * Math.pow(2, attempt);
-    },
-    
+    getCacheDuration(sheetName) {
+        return this.cacheConfig[sheetName] || this.cacheConfig.default;
+    }
+
     /**
-     * Check if error is retryable
-     * @private
+     * Invalidate cache untuk sheet tertentu
      */
-    _isRetryableError(error) {
-        // Retry on network errors, timeouts, etc.
-        return error.message.includes('fetch') || 
-               error.message.includes('network') ||
-               error.message.includes('timeout');
-    },
-    
-    /**
-     * Sleep utility
-     * @private
-     */
-    _sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    },
-    
-    /**
-     * Generate cache key from URL and options
-     * @private
-     */
-    _generateCacheKey(url, options) {
-        const method = options.method || 'GET';
-        const body = options.body || '';
-        return `${method}:${url}:${body}`;
-    },
-    
-    /**
-     * Clear all cache
-     */
-    clearCache() {
-        const size = this.cache.size;
-        this.cache.clear();
-        logger.log(`🗑️ [ApiService] Cache cleared: ${size} entries removed`);
-        return size;
-    },
-    
-    /**
-     * Clear cache for specific endpoint
-     */
-    clearCacheForEndpoint(endpoint) {
-        const url = `${CONFIG.getMainApiUrl()}${endpoint}`;
-        let cleared = 0;
+    invalidateCache(sheetName) {
+        const keysToDelete = [];
         
-        for (const [key, value] of this.cache.entries()) {
-            if (key.includes(url)) {
-                this.cache.delete(key);
-                cleared++;
+        for (const [key] of this.cache) {
+            if (key.startsWith(sheetName)) {
+                keysToDelete.push(key);
             }
         }
-        
-        logger.log(`🗑️ [ApiService] Cache cleared for ${endpoint}: ${cleared} entries`);
-        return cleared;
-    },
-    
+
+        keysToDelete.forEach(key => {
+            this.cache.delete(key);
+            logger.log(`[ApiServiceGAS] Cache invalidated: ${key}`);
+        });
+    }
+
+    /**
+     * Clear semua cache
+     */
+    clearAllCache() {
+        this.cache.clear();
+        logger.log('[ApiServiceGAS] All cache cleared');
+    }
+
     /**
      * Get cache statistics
      */
     getCacheStats() {
-        const stats = {
-            totalEntries: this.cache.size,
-            pendingRequests: this.pendingRequests.size,
-            entries: []
+        return {
+            size: this.cache.size,
+            keys: Array.from(this.cache.keys())
         };
-        
-        for (const [key, value] of this.cache.entries()) {
-            const age = Date.now() - value.timestamp;
-            stats.entries.push({
-                key,
-                age: Math.round(age / 1000), // in seconds
-                size: JSON.stringify(value.data).length
-            });
-        }
-        
-        return stats;
-    },
-    
-    /**
-     * POST request helper
-     */
-    async post(endpoint, data, options = {}) {
-        return this.fetch(endpoint, {
-            ...options,
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers
-            },
-            body: JSON.stringify(data),
-            cache: false // Don't cache POST requests by default
-        });
-    },
-    
-    /**
-     * PATCH request helper
-     */
-    async patch(endpoint, data, options = {}) {
-        return this.fetch(endpoint, {
-            ...options,
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers
-            },
-            body: JSON.stringify(data),
-            cache: false // Don't cache PATCH requests by default
-        });
-    },
-    
-    /**
-     * GET request helper (with caching)
-     */
-    async get(endpoint, options = {}) {
-        return this.fetch(endpoint, {
-            ...options,
-            method: 'GET'
-        });
     }
-};
+}
 
+// Export singleton instance
+export const ApiService = new ApiServiceGAS();
 
+// Expose ke window untuk backward compatibility
+if (typeof window !== 'undefined') {
+    window.ApiService = ApiService;
+}
