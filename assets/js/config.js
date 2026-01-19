@@ -9,8 +9,8 @@ import { logger } from './logger.js';
 export const CONFIG = {
     // Default API URLs
     DEFAULTS: {
-        MAIN_API: 'https://sheetdb.io/api/v1/sappvpb5wazfd',
-        ADMIN_API: 'https://sheetdb.io/api/v1/sappvpb5wazfd'
+        MAIN_API: 'https://script.google.com/macros/s/AKfycbzNiF5IOGmCm0bR1o-hukwKmVvieLjnrG7hzodXos5BJn9OvBQdddHcwPiAUoHfH2aN3Q/exec',
+        ADMIN_API: 'https://script.google.com/macros/s/AKfycbzNiF5IOGmCm0bR1o-hukwKmVvieLjnrG7hzodXos5BJn9OvBQdddHcwPiAUoHfH2aN3Q/exec'
     },
     
     // Storage keys
