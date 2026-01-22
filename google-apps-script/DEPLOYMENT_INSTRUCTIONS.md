@@ -122,13 +122,13 @@ Menyimpan data pengajuan pinjaman komunitas tertutup.
 | Kolom | Keterangan |
 | --- | --- |
 | `id` | ID unik pengajuan |
-| `tanggal_pengajuan` | Tanggal submit (ISO/format tanggal) |
+| `tanggal_pengajuan` | Tanggal submit (ISO `YYYY-MM-DD`) |
 | `nama` | Nama peminjam |
 | `nomor_hp` | Nomor WhatsApp/HP |
 | `nominal` | Nominal pinjaman |
 | `bunga_persen` | 5, 10, atau 20 |
-| `bunga_nominal` | Nominal bunga |
-| `total_bayar` | Total bayar (nominal + bunga) |
+| `bunga_nominal` | Nominal bunga (angka) |
+| `total_bayar` | Total bayar (nominal + bunga, angka) |
 | `tenor_hari` | Tetap 30 |
 | `status` | `pending`, `approved`, `rejected` |
 | `dokumen_url` | URL dokumen (opsional) |
