@@ -192,6 +192,8 @@ Pastikan sheet names di spreadsheet Anda sesuai dengan yang digunakan di kode:
 - `tukar_poin`
 - `user_points`
 - `claims`
+- `admin`
+- `pinjaman`
 
 Jika nama sheet berbeda, Anda perlu:
 1. Rename sheet di Google Sheets, ATAU

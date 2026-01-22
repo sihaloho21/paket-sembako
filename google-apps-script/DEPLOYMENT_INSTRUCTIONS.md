@@ -99,3 +99,40 @@ Pastikan sheet-sheet berikut ada di spreadsheet Anda:
 - `tukar_poin` - Data reward/hadiah
 - `user_points` - Data poin pengguna
 - `claims` - Data klaim reward
+- `admin` - Data admin (login)
+- `pinjaman` - Data pinjaman komunitas
+
+## Struktur Kolom Sheet Pinjaman
+
+### Sheet `admin`
+Digunakan untuk autentikasi admin (role admin only).
+
+| Kolom | Keterangan |
+| --- | --- |
+| `id` | ID unik admin |
+| `username` | Username login admin |
+| `password` | Password login admin |
+| `nama` | Nama admin |
+| `role` | Tetap `admin` |
+| `status` | `active` / `inactive` |
+
+### Sheet `pinjaman`
+Menyimpan data pengajuan pinjaman komunitas tertutup.
+
+| Kolom | Keterangan |
+| --- | --- |
+| `id` | ID unik pengajuan |
+| `tanggal_pengajuan` | Tanggal submit (ISO/format tanggal) |
+| `nama` | Nama peminjam |
+| `nomor_hp` | Nomor WhatsApp/HP |
+| `nominal` | Nominal pinjaman |
+| `bunga_persen` | 5, 10, atau 20 |
+| `bunga_nominal` | Nominal bunga |
+| `total_bayar` | Total bayar (nominal + bunga) |
+| `tenor_hari` | Tetap 30 |
+| `status` | `pending`, `approved`, `rejected` |
+| `dokumen_url` | URL dokumen (opsional) |
+| `tanggal_persetujuan` | Diisi saat approve/reject |
+| `catatan` | Catatan admin (opsional) |
+
+**Catatan:** `status` default `pending`, dan `tenor_hari` selalu `30`.
